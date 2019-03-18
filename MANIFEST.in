@@ -1,0 +1,3 @@
+include *.md
+exclude requirements.txt
+include version.py
