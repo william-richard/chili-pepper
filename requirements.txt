@@ -1,0 +1,6 @@
+#######
+# DEV #
+#######
+tox
+pytest
+tox-pyenv
