@@ -32,7 +32,7 @@ def _create_kale_s3_bucket():
     bucket_name = 'kale_test_bucket'
     s3_client.create_bucket(Bucket=bucket_name)
     # TODO make this optional, so we can test that our code can gracefully handle when bucket versioning is not enabled
-    s3_client.put_bucket_versioning(Bucket=bucket_name, VersioningConfiguration={"Status": "Enabled"})
+    s3_client.put_bucket_versioning(Bucket=bucket_name, VersioningConfiguration={'Status': 'Enabled'})
     return bucket_name
 
 
@@ -63,11 +63,11 @@ def test_send_to_s3(tmp_path):
     actual_get_object_response = s3_client.get_object(
         Bucket=bucket_name, Key=deployment_package_code_prop.S3Key, VersionId=deployment_package_code_prop.S3ObjectVersion)
 
-    assert actual_get_object_response["VersionId"] == '0'
+    assert actual_get_object_response['VersionId'] == '0'
     assert actual_get_object_response['Body'].read() == deployment_package_path.read_bytes()
 
 
-@pytest.mark.parametrize('runtime', ["python2.7", "python3.6", "python3.7"])
+@pytest.mark.parametrize('runtime', ['python2.7', 'python3.6', 'python3.7'])
 @pytest.mark.skip()  # Moto is being stupid - don't rely on it for now
 def test_simple_lambda_deploy(tmp_path, runtime):
     app_dir = _create_app_structure(tmp_path)
@@ -77,7 +77,7 @@ def test_simple_lambda_deploy(tmp_path, runtime):
     iam_resource = boto3.resource('iam')
     lambda_client = boto3.client('lambda')
 
-    app = Kale(app_name="test_deployer_app", bucket_name=bucket_name, runtime=runtime)
+    app = Kale(app_name='test_deployer_app', bucket_name=bucket_name, runtime=runtime)
     app._function_handles = ['app.hello_world']  # TODO undo this private member access hack? Or just mock the Kale app object
 
     deployer = Deployer(app=app)
@@ -86,7 +86,7 @@ def test_simple_lambda_deploy(tmp_path, runtime):
 
     cf_stack_name = app.app_name
 
-    role_detail = cf_client.describe_stack_resource(StackName=cf_stack_name, LogicalResourceId="FunctionRole")['StackResourceDetail']
+    role_detail = cf_client.describe_stack_resource(StackName=cf_stack_name, LogicalResourceId='FunctionRole')['StackResourceDetail']
     # the Physical ID returned by CF for an IAM role is the role id, not the role name, which is basically useless
     function_role = [r for r in iam_resource.roles.all() if r.role_id == role_detail['PhysicalResourceId']][0]
 
@@ -95,9 +95,9 @@ def test_simple_lambda_deploy(tmp_path, runtime):
                                                          "[{'Action': ['sts:AssumeRole'],"
                                                          "'Effect': 'Allow',"
                                                          "'Principal': {'Service': ['lambda.amazonaws.com']"
-                                                         "}}]}")
+                                                         '}}]}')
 
-    lambda_function = lambda_client.get_function(FunctionName=("test_deployer_app.hello_world"))
+    lambda_function = lambda_client.get_function(FunctionName=('test_deployer_app.hello_world'))
     print(lambda_function)
     '''
     expected_function_attributes = {

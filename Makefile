@@ -4,10 +4,9 @@ install-latest-local:
 	pip install -e .
 	pip install -r requirements.txt
 
-yapf:
+lint:
 	yapf --in-place --recursive --parallel --exclude=.tox/* .
-
-flake8:
+	unify --recursive --in-place .
 	flake8
 
 clean:
