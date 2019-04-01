@@ -1,4 +1,8 @@
 image: python:3.7-stretch
+variables:
+    AWS_DEFAULT_REGION: us-east-1 
+    AWS_ACCESS_KEY_ID: fake_key 
+    AWS_SECRET_ACCESS_KEY: fake_secret
 
 before_script:
   - pip install -r requirements.txt
@@ -12,14 +16,14 @@ lint:
 test:2.7:
   image: python:2.7-stretch
   script:
-    - pytest tests
+    - pytest -vv tests --cov kale
 
 test:3.6:
   image: python:3.6-stretch
   script:
-    - pytest tests
+    - pytest -vv tests --cov kale
 
 test:3.7:
   image: python:3.7-stretch
   script:
-    - pytest tests
+    - pytest -vv tests --cov kale

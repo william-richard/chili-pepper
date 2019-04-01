@@ -1,8 +1,10 @@
 #######
 # DEV #
 #######
-tox
+flake8
+moto
 pytest
+pytest-cov
+tox
 tox-pyenv
 yapf
-flake8
