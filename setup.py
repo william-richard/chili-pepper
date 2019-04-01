@@ -1,6 +1,7 @@
-import setuptools
-import subprocess
 import os
+import subprocess
+
+import setuptools
 """
 taken from
 http://blogs.nopcode.org/brainstorm/2013/05/20/pragmatic-python-versioning-via-setuptools-and-git-tags/
@@ -28,6 +29,11 @@ setuptools.setup(
     long_description="A longer description",
     long_description_content_type="text/markdown",
     packages=setuptools.find_packages(),
+    install_requires=[
+        "awacs",
+        "pathlib2",
+        "troposphere",
+    ],
     url="https://github.com/pypa/sampleproject",
     classifiers=[
         "Programming Language :: Python :: 3",
