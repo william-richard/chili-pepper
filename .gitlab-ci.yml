@@ -11,6 +11,7 @@ before_script:
 lint:
   script:
     - yapf --diff --recursive --parallel .
+    - unify --check-only --recursive .
     - flake8
 
 test:2.7:

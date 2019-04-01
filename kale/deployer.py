@@ -21,7 +21,7 @@ except ImportError:
     # typing isn't in python2.7 and I don't want to deal with fixing it right now
     pass
 
-TITLE_SPLIT_REGEX_HACK = re.compile("[^a-zA-Z0-9]")
+TITLE_SPLIT_REGEX_HACK = re.compile('[^a-zA-Z0-9]')
 
 
 class Deployer:
@@ -62,7 +62,7 @@ class Deployer:
     def _send_deployment_package_to_s3(self, deployment_package_path):
         # type: (Path) -> awslambda.Code
         # TODO verify that bucket has versioning enabled
-        s3_key = self._app.app_name + "_deployment_package.zip"
+        s3_key = self._app.app_name + '_deployment_package.zip'
         s3_client = boto3.client('s3')
 
         s3_response = s3_client.put_object(
@@ -89,7 +89,7 @@ class Deployer:
         # type: (awslambda.Code, str, iam.Role, str) -> None
         # TODO handle more than one function
         # TODO customizable memory and other attributes
-        function_name = self._app.app_name + "." + function_handler_string  # TODO this is not a good choice
+        function_name = self._app.app_name + '.' + function_handler_string  # TODO this is not a good choice
         title = ''.join(part.capitalize() for part in TITLE_SPLIT_REGEX_HACK.split(function_name))  # TODO this will not work in general
         return awslambda.Function(
             title,
@@ -103,5 +103,5 @@ class Deployer:
     def _create_role(self):
         # TODO set a role name here? Instead of relying on cloudformation to create a random nonsense string for the name
         return iam.Role(
-            "FunctionRole",
-            AssumeRolePolicyDocument=Policy(Statement=[Statement(Effect=Allow, Action=[AssumeRole], Principal=Principal("Service", ["lambda.amazonaws.com"]))]))
+            'FunctionRole',
+            AssumeRolePolicyDocument=Policy(Statement=[Statement(Effect=Allow, Action=[AssumeRole], Principal=Principal('Service', ['lambda.amazonaws.com']))]))
