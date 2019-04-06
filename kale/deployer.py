@@ -3,7 +3,6 @@ import re
 import zipfile
 
 import boto3
-
 from awacs.aws import Allow, Policy, Principal, Statement
 from awacs.sts import AssumeRole
 from troposphere import Ref, Template, awslambda, iam
@@ -30,7 +29,7 @@ class Deployer:
         self._app = app
 
     def deploy(self, dest, app_dir):
-        # type: (Path, Path, Kale) -> str
+        # type: (Path, Path) -> str
 
         deployment_package_path = self._create_deployment_package(dest, app_dir)
         deployment_package_code_prop = self._send_deployment_package_to_s3(deployment_package_path)

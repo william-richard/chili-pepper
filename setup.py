@@ -29,6 +29,9 @@ setuptools.setup(
     long_description='A longer description',
     long_description_content_type='text/markdown',
     packages=setuptools.find_packages(),
+    entry_points={'console_scripts': [
+        'kale = kale.main:main',
+    ]},
     install_requires=[
         'awacs',
         'pathlib2',
