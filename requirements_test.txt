@@ -1,0 +1,6 @@
+# requirements for running tests
+moto
+pytest
+pytest-cov
+tox
+tox-pyenv

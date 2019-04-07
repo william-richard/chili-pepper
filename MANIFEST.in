@@ -1,3 +1,4 @@
 include *.md
 exclude requirements.txt
+exclude requirements*.txt
 include version.py

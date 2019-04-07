@@ -2,6 +2,7 @@ import argparse
 import importlib
 import os
 import sys
+
 try:
     from pathlib import Path
 except ImportError:
@@ -25,7 +26,7 @@ class CLI:
             if cwd not in sys.path:
                 sys.path.insert(0, cwd)
 
-        module_name, app_variable = app_string.rsplit('.')
+        module_name, app_variable = app_string.rsplit(".")
         app = getattr(importlib.import_module(module_name), app_variable)
         return app
 
@@ -43,27 +44,25 @@ class CLI:
 def main():
     cli = CLI()
 
-    parser = argparse.ArgumentParser(description='Serverless asynchronous tasks')
-    parser.add_argument('--app', '-A', type=str, help='The Kale application location')
+    parser = argparse.ArgumentParser(description="Serverless asynchronous tasks")
+    parser.add_argument("--app", "-A", type=str, help="The Kale application location")
 
-    subparsers = parser.add_subparsers(help='Kale commands')
+    subparsers = parser.add_subparsers(help="Kale commands")
 
-    deploy_parser = subparsers.add_parser('deploy', help='Deploy functions to serverless provider')
+    deploy_parser = subparsers.add_parser("deploy", help="Deploy functions to serverless provider")
     deploy_parser.set_defaults(func=cli.deploy)
     # TODO implement dry run
     # deploy_parser.add_argument('--dry-run', '-n', action='store_true',
     # help=('Display what would occur if a deploy was executed, without taking remote action'
     #       '(this flag will still create the deploy bundle)'))
-    deploy_parser.add_argument('--app-dir',
-                               '-d',
-                               type=str,
-                               required=True,
-                               help='The directory holding all the code that needs to be included in the serverless function bundle')
+    deploy_parser.add_argument(
+        "--app-dir", "-d", type=str, required=True, help="The directory holding all the code that needs to be included in the serverless function bundle"
+    )
     # TODO add a deploy destination argument?
 
     args = parser.parse_args()
     args.func(args)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
