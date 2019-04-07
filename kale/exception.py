@@ -1,0 +1,2 @@
+class KaleException(Exception):
+    pass

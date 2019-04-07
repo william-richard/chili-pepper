@@ -1,9 +1,12 @@
+import json
 import zipfile
 
+import boto3
 import pytest
+
+from conftest import create_kale_s3_bucket
 from kale.app import Kale
 from kale.deployer import Deployer
-import boto3
 
 
 def _create_app_structure(tmp_path):
@@ -25,17 +28,6 @@ def _create_app_structure(tmp_path):
     return app_dir
 
 
-def _create_kale_s3_bucket():
-    # type: () -> str
-    import boto3
-    s3_client = boto3.client('s3')
-    bucket_name = 'kale_test_bucket'
-    s3_client.create_bucket(Bucket=bucket_name)
-    # TODO make this optional, so we can test that our code can gracefully handle when bucket versioning is not enabled
-    s3_client.put_bucket_versioning(Bucket=bucket_name, VersioningConfiguration={'Status': 'Enabled'})
-    return bucket_name
-
-
 def test_zip(tmp_path):
     app = Kale('test_deployer_app', bucket_name='dummy', runtime='python3.7')
     deployer = Deployer(app=app)
@@ -50,7 +42,7 @@ def test_zip(tmp_path):
 def test_send_to_s3(tmp_path):
     # TODO test s3 bucket versioning
     app_dir = _create_app_structure(tmp_path)
-    bucket_name = _create_kale_s3_bucket()
+    bucket_name = create_kale_s3_bucket()
 
     app = Kale('test_deployer_app', bucket_name=bucket_name, runtime='python3.7')
     deployer = Deployer(app=app)
@@ -72,7 +64,7 @@ def test_send_to_s3(tmp_path):
 @pytest.mark.skip()  # Moto is being stupid - don't rely on it for now
 def test_simple_lambda_deploy(tmp_path, runtime):
     app_dir = _create_app_structure(tmp_path)
-    bucket_name = _create_kale_s3_bucket()
+    bucket_name = create_kale_s3_bucket()
 
     cf_client = boto3.client('cloudformation')
     iam_resource = boto3.resource('iam')
@@ -92,11 +84,15 @@ def test_simple_lambda_deploy(tmp_path, runtime):
     function_role = [r for r in iam_resource.roles.all() if r.role_id == role_detail['PhysicalResourceId']][0]
 
     # I think moto is messing up the quotes so this is not valid json :(
-    assert function_role.assume_role_policy_document == ("{'Statement': "
-                                                         "[{'Action': ['sts:AssumeRole'],"
-                                                         "'Effect': 'Allow',"
-                                                         "'Principal': {'Service': ['lambda.amazonaws.com']"
-                                                         '}}]}')
+    assert json.loads(function_role.assume_role_policy_document.replace("'", "\"")) == {
+        'Statement': [{
+            'Action': ['sts:AssumeRole'],
+            'Effect': 'Allow',
+            'Principal': {
+                'Service': ['lambda.amazonaws.com']
+            }
+        }]
+    }
 
     lambda_function = lambda_client.get_function(FunctionName=('test_deployer_app.hello_world'))
     print(lambda_function)
