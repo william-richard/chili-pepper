@@ -1,12 +1,11 @@
-.PHONY: yapf flake8 test install-latest-local clean
+.PHONY: flake8 test install-latest-local clean
 
 install-latest-local:
 	pip install -e .
 	pip install -r requirements.txt
 
 lint:
-	yapf --in-place --recursive --parallel --exclude=.tox/* .
-	unify --recursive --in-place .
+	black .
 	flake8
 
 clean:

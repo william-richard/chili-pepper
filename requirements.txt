@@ -1,11 +1,5 @@
 #######
 # DEV #
 #######
-flake8
-moto
-pytest
-pytest-cov
-tox
-tox-pyenv
-unify
-yapf
+-r requirements_lint.txt
+-r requirements_test.txt
