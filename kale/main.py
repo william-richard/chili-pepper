@@ -54,8 +54,11 @@ def main():
     # deploy_parser.add_argument('--dry-run', '-n', action='store_true',
     # help=('Display what would occur if a deploy was executed, without taking remote action'
     #       '(this flag will still create the deploy bundle)'))
-    deploy_parser.add_argument(
-        '--app-dir', '-d', type=str, required=True, help='The directory holding all the code that needs to be included in the serverless function bundle')
+    deploy_parser.add_argument('--app-dir',
+                               '-d',
+                               type=str,
+                               required=True,
+                               help='The directory holding all the code that needs to be included in the serverless function bundle')
     # TODO add a deploy destination argument?
 
     args = parser.parse_args()

@@ -60,8 +60,9 @@ def test_send_to_s3(tmp_path):
     deployment_package_path = deployer._create_deployment_package(tmp_path, app_dir)
     deployment_package_code_prop = deployer._send_deployment_package_to_s3(deployment_package_path)
 
-    actual_get_object_response = s3_client.get_object(
-        Bucket=bucket_name, Key=deployment_package_code_prop.S3Key, VersionId=deployment_package_code_prop.S3ObjectVersion)
+    actual_get_object_response = s3_client.get_object(Bucket=bucket_name,
+                                                      Key=deployment_package_code_prop.S3Key,
+                                                      VersionId=deployment_package_code_prop.S3ObjectVersion)
 
     assert actual_get_object_response['VersionId'] == '0'
     assert actual_get_object_response['Body'].read() == deployment_package_path.read_bytes()
