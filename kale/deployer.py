@@ -1,13 +1,17 @@
 import builtins
+import logging
 import os
 import re
+import shutil
+import subprocess
+import sys
+import tempfile
 import zipfile
-import logging
 
 import boto3
 from awacs.aws import Allow, Policy, Principal, Statement
 from awacs.sts import AssumeRole
-from troposphere import Template, awslambda, iam, GetAtt
+from troposphere import GetAtt, Template, awslambda, iam
 
 from kale.app import Kale
 
@@ -39,35 +43,7 @@ class Deployer:
         deployment_package_path = self._create_deployment_package(dest, app_dir)
         deployment_package_code_prop = self._send_deployment_package_to_s3(deployment_package_path)
         cf_template = self._get_cloudformation_template(deployment_package_code_prop)
-
-        # TODO this is a bad stack name
-        cf_stack_name = self._app.app_name
-
-        self._logger.info("Deploying cloudformation template to stack " + cf_stack_name)
-
-        cf_client = boto3.client("cloudformation")
-        # TODO start using s3 hosted templates, to have bigger stacks
-        try:
-            cf_client.describe_stacks(StackName=cf_stack_name)
-
-            stack_exists = True
-        except cf_client.exceptions.ClientError:
-            stack_exists = False
-
-        if stack_exists:
-            # stack exists
-            update_stack_response = cf_client.update_stack(StackName=cf_stack_name, TemplateBody=cf_template.to_json(), Capabilities=["CAPABILITY_IAM"])
-            stack_id = update_stack_response["StackId"]
-            self._logger.info("Cloudformation stack '" + cf_stack_name + "' with id " + stack_id + " update in progress")
-        else:
-            # stack does not exist - create it
-            create_stack_response = cf_client.create_stack(StackName=cf_stack_name, TemplateBody=cf_template.to_json(), Capabilities=["CAPABILITY_IAM"])
-            stack_id = create_stack_response["StackId"]
-            self._logger.info("Cloudformation stack '" + cf_stack_name + "' with id " + stack_id + " creation in progress")
-
-        # TODO track stack update/create and give feedback if it succeeds or fails
-
-        return stack_id
+        return self._deploy_template_to_cloudformation(cf_template)
 
     def _create_deployment_package(self, dest, app_dir):
         # type: (Path, Path) -> Path
@@ -81,13 +57,38 @@ class Deployer:
 
         zfh = zipfile.ZipFile(str(output_filename), "w", zipfile.ZIP_DEFLATED)
 
-        for root, _, files in os.walk(str(app_dir)):
-            for file in files:
-                file_path = os.path.join(root, file)
-                # do not put files under the app_dir inside the zip
-                # without passing arcname, the archive will have the app_dir folder at its root
-                zip_path = os.path.relpath(file_path, str(app_dir))
-                zfh.write(file_path, arcname=zip_path)
+        def _add_directory_to_archive(src_dir):
+            for root, _, files in os.walk(src_dir):
+                for _file in files:
+                    file_path = os.path.join(root, _file)
+                    # do not put files under the app_dir inside the zip
+                    # without passing arcname, the archive will have the app_dir folder at its root
+                    zip_path = os.path.relpath(file_path, str(src_dir))
+                    self._logger.debug("Adding " + file_path + " to archive at " + zip_path)
+                    zfh.write(file_path, arcname=zip_path)
+
+        # TODO un-hardcode the requirements.txt path
+        requirements_path = app_dir / "requirements.txt"
+        if requirements_path.exists():
+            requirements_temp_dir = tempfile.mkdtemp(prefix="kale-")
+            try:
+                self._logger.info(
+                    "Installing requirements into temporary directory " + requirements_temp_dir + "so they can be included in the deployment package"
+                )
+                # TODO gracefully handle requirements with -e
+                # https://github.com/UnitedIncome/serverless-python-requirements/issues/240
+                # https://github.com/nficano/python-lambda/blob/master/aws_lambda/aws_lambda.py#L417
+                subprocess.check_call(
+                    [sys.executable, "-m", "pip", "install", "-r", str(requirements_path.resolve()), "-t", requirements_temp_dir, "--ignore-installed"]
+                )
+                _add_directory_to_archive(requirements_temp_dir)
+                self._logger.info("Done installing requirements and adding them to the deployment package")
+            finally:
+                shutil.rmtree(requirements_temp_dir)
+
+        self._logger.info("Adding application code to the deployment package")
+        _add_directory_to_archive(str(app_dir))
+
         zfh.close()
 
         self._logger.info("Done creating deployment package " + str(output_filename))
@@ -140,3 +141,33 @@ class Deployer:
             "FunctionRole",
             AssumeRolePolicyDocument=Policy(Statement=[Statement(Effect=Allow, Action=[AssumeRole], Principal=Principal("Service", ["lambda.amazonaws.com"]))]),
         )
+
+    def _deploy_template_to_cloudformation(self, cf_template):
+        # TODO this is a bad stack name
+        cf_stack_name = self._app.app_name
+
+        self._logger.info("Deploying cloudformation template to stack " + cf_stack_name)
+
+        cf_client = boto3.client("cloudformation")
+        # TODO start using s3 hosted templates, to have bigger stacks
+        try:
+            cf_client.describe_stacks(StackName=cf_stack_name)
+
+            stack_exists = True
+        except cf_client.exceptions.ClientError:
+            stack_exists = False
+
+        if stack_exists:
+            # stack exists
+            update_stack_response = cf_client.update_stack(StackName=cf_stack_name, TemplateBody=cf_template.to_json(), Capabilities=["CAPABILITY_IAM"])
+            stack_id = update_stack_response["StackId"]
+            self._logger.info("Cloudformation stack '" + cf_stack_name + "' with id " + stack_id + " update in progress")
+        else:
+            # stack does not exist - create it
+            create_stack_response = cf_client.create_stack(StackName=cf_stack_name, TemplateBody=cf_template.to_json(), Capabilities=["CAPABILITY_IAM"])
+            stack_id = create_stack_response["StackId"]
+            self._logger.info("Cloudformation stack '" + cf_stack_name + "' with id " + stack_id + " creation in progress")
+
+        # TODO track stack update/create and give feedback if it succeeds or fails
+
+        return stack_id
