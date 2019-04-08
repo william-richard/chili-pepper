@@ -45,7 +45,7 @@ class CLI:
         app = self._load_app(args.app, args.app_dir)
         deployer = Deployer(app)
 
-        deployer.deploy(dest=Path(args.deployment_package_dir), app_dir=args.app_dir)
+        deployer.deploy(dest=Path(args.deployment_package_dir), app_dir=Path(args.app_dir))
 
 
 def main():
@@ -53,6 +53,7 @@ def main():
 
     parser = argparse.ArgumentParser(description="Serverless asynchronous tasks")
     parser.add_argument("--app", "-A", type=str, help="The Kale application location")
+    # TODO add verbose and quiet args
 
     subparsers = parser.add_subparsers(help="Kale commands")
 
