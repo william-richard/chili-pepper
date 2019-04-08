@@ -9,7 +9,7 @@ def test_task_decorator():
 
     app = Kale("test_deployer_app", bucket_name=bucket_name, runtime="python3.7")
 
-    @app.task
+    @app.task()
     def say_hello(event, context):
         return "Hello!"
 
@@ -25,8 +25,8 @@ def test_invalid_signature_no_arguments():
 
     with pytest.raises(InvalidFunctionSignature):
 
-        @app.task
-        def say_hello():
+        @app.task()
+        def say_hello():  # pylint: disable=unused-variable
             return "Hello!"
 
 
@@ -38,8 +38,8 @@ def test_invalid_signature_only_event():
 
     with pytest.raises(InvalidFunctionSignature):
 
-        @app.task
-        def say_hello(event):
+        @app.task()
+        def say_hello(event):  # pylint: disable=unused-variable
             return "Hello!"
 
 
@@ -51,8 +51,8 @@ def test_invalid_signature_only_context():
 
     with pytest.raises(InvalidFunctionSignature):
 
-        @app.task
-        def say_hello(context):
+        @app.task()
+        def say_hello(context):  # pylint: disable=unused-variable
             return "Hello!"
 
 
@@ -64,6 +64,6 @@ def test_invalid_signature_extra_parameter():
 
     with pytest.raises(InvalidFunctionSignature):
 
-        @app.task
-        def say_hello(event, context, extra):
+        @app.task()
+        def say_hello(event, context, extra):  # pylint: disable=unused-variable
             return "Hello!"

@@ -2,6 +2,7 @@ import argparse
 import importlib
 import os
 import sys
+import logging
 
 try:
     from pathlib import Path
@@ -15,6 +16,14 @@ from kale.deployer import Deployer
 
 
 class CLI:
+    def __init__(self):
+        # set up logging
+        logger = logging.getLogger("kale")
+        logger.setLevel(logging.INFO)
+
+        ch = logging.StreamHandler()
+        logger.addHandler(ch)
+
     def _load_app(self, app_string, app_dir=None):
         # type: (str, Optional[str]) -> Kale
         # make the app's module is in the path, so it can be imported
@@ -36,9 +45,7 @@ class CLI:
         app = self._load_app(args.app, args.app_dir)
         deployer = Deployer(app)
 
-        destination_dir = Path(os.getcwd())
-
-        deployer.deploy(dest=destination_dir, app_dir=args.app_dir)
+        deployer.deploy(dest=Path(args.deployment_package_dir), app_dir=args.app_dir)
 
 
 def main():
@@ -56,8 +63,9 @@ def main():
     # help=('Display what would occur if a deploy was executed, without taking remote action'
     #       '(this flag will still create the deploy bundle)'))
     deploy_parser.add_argument(
-        "--app-dir", "-d", type=str, required=True, help="The directory holding all the code that needs to be included in the serverless function bundle"
+        "--app-dir", type=str, required=True, help="The directory holding all the code that needs to be included in the serverless function bundle"
     )
+    deploy_parser.add_argument("--deployment-package-dir", "-d", type=str, default=os.getcwd(), help="The directory to put the deployment package zip")
     # TODO add a deploy destination argument?
 
     args = parser.parse_args()
