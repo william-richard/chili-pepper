@@ -1,7 +1,12 @@
 import builtins
 import inspect
+import boto3
+import json
+import logging
+from threading import Thread
 
 from kale.exception import KaleException
+from kale.deployer import Deployer
 
 try:
     from typing import List
@@ -14,13 +19,45 @@ class InvalidFunctionSignature(KaleException):
     pass
 
 
+class Result:
+    def __init__(self, lambda_function_name, event):
+        # type: (str, dict) -> None
+        self._logger = logging.getLogger(__name__)
+
+        self._lambda_function_name = lambda_function_name
+        self._event = event
+
+        self._thread = None
+        self._invoke_response = None
+
+    def start(self):
+        if self._thread is None:
+
+            def lambda_run():
+                lambda_client = boto3.client("lambda")
+                self._invoke_response = lambda_client.invoke(FunctionName=self._lambda_function_name, Payload=json.dumps(self._event))
+
+            self._thread = Thread(target=lambda_run)
+            self._thread.start()
+        return self._thread
+
+    def get(self):
+        # make sure we're started.... even though start *should* have been called by delay
+        thread = self.start()
+        thread.join()
+        # lambda has now been invoked and _invoke_response *should* be populated
+        # TODO error handling, logs from the lambda, etc
+        return json.loads(self._invoke_response["Payload"].read().decode("utf-8"))
+
+
 class Kale:
     def __init__(self, app_name, bucket_name, runtime):
         # type: (str, str, str) -> None
         self._app_name = app_name
         self._bucket_name = bucket_name
-        self._runtime = runtime
+        self._runtime = runtime  # TODO should runtime be set by sys.version_info?
         self._task_functions = list()
+        self._logger = logging.getLogger(__name__)
 
     @property
     def app_name(self):
@@ -75,15 +112,15 @@ class Kale:
                 plan of attack
                 1) Compute or look up the function name
                 2) call https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/lambda.html#Lambda.Client.invoke
+                   in a separate thread (since invoke only gives you useful feedback if you call it synchronously)
                 3) return a wrapper of the response, payload, logs, etc
-
-                The easy way would be to set InvocationType to Event, and look up the return value some other way...
-                but the docs don't seem to explain how to do that.  AWS docs often are not very clear though.
-
-                If the Event InvocationType don't work, we might need call invoke in a separate thread/process
-                and return a generator that can wait until the synchronous call to lambda completes and returns everything.
                 """
-                pass
+                # TODO make this cloud agnostic, abstracting it depending on the cloud provider
+                deployer = Deployer(self)
+                lambda_function_name = deployer.get_function_id(func)  # TODO alias/versioning support?
+                result = Result(lambda_function_name, event)
+                result.start()
+                return result
 
             func.delay = _delay_wrapper
             return func
