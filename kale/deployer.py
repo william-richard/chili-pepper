@@ -13,8 +13,6 @@ from awacs.aws import Allow, Policy, Principal, Statement
 from awacs.sts import AssumeRole
 from troposphere import GetAtt, Template, awslambda, iam
 
-from kale.app import Kale
-
 try:
     from pathlib import Path
 except ImportError:
@@ -31,7 +29,7 @@ TITLE_SPLIT_REGEX_HACK = re.compile("[^a-zA-Z0-9]")
 
 class Deployer:
     def __init__(self, app):
-        # type: (Kale) -> None
+        # type: (app.Kale) -> None
         self._app = app
 
         self._logger = logging.getLogger(__name__)
@@ -44,6 +42,18 @@ class Deployer:
         deployment_package_code_prop = self._send_deployment_package_to_s3(deployment_package_path)
         cf_template = self._get_cloudformation_template(deployment_package_code_prop)
         return self._deploy_template_to_cloudformation(cf_template)
+
+    def get_function_id(self, python_function):
+        # type: (builtins.function) -> str
+        # TODO it's a little weird that this lives on the deployer - I'm not sure what the right abstraction is
+        lambda_function_cf_logical_id = self._get_function_logical_id(self._get_function_handler_string(python_function))
+        stack_name = self._get_stack_name()
+
+        cf_client = boto3.client("cloudformation")
+        describe_function_resource_response = cf_client.describe_stack_resource(StackName=stack_name, LogicalResourceId=lambda_function_cf_logical_id)
+        lambda_function_name = describe_function_resource_response["StackResourceDetail"]["PhysicalResourceId"]
+
+        return lambda_function_name
 
     def _create_deployment_package(self, dest, app_dir):
         # type: (Path, Path) -> Path
@@ -125,26 +135,41 @@ class Deployer:
         self._logger.info("Done generating cloudformation template")
         return template
 
+    def _get_function_handler_string(self, task_function):
+        # type: (builtins.function) -> str
+        module_name = task_function.__module__
+        return module_name + "." + task_function.__name__
+
+    def _get_function_logical_id(self, function_handler):
+        # type: (str) -> str
+        return "".join(part.capitalize() for part in TITLE_SPLIT_REGEX_HACK.split(function_handler))  # TODO this will not work in general
+
     def _create_lambda_function(self, code_property, task_function, role, runtime):
         # type: (awslambda.Code, builtins.function, iam.Role, str) -> None
         # TODO customizable memory and other attributes
-        module_name = task_function.__module__
-        function_handler = module_name + "." + task_function.__name__
-        # function_name = self._app.app_name + "." + function_handler  # TODO this is not a good choice
-        title = "".join(part.capitalize() for part in TITLE_SPLIT_REGEX_HACK.split(function_handler))  # TODO this will not work in general
+        # TODO add support for versioning
+        function_handler = self._get_function_handler_string(task_function)
+        title = self._get_function_logical_id(function_handler)
         # TODO specify the function name?  Maybe we don't care?
         return awslambda.Function(title, Code=code_property, Handler=function_handler, Role=GetAtt(role, "Arn"), Runtime=runtime)
 
     def _create_role(self):
         # TODO set a role name here? Instead of relying on cloudformation to create a random nonsense string for the name
+        # TODO allow customizable policies
         return iam.Role(
             "FunctionRole",
             AssumeRolePolicyDocument=Policy(Statement=[Statement(Effect=Allow, Action=[AssumeRole], Principal=Principal("Service", ["lambda.amazonaws.com"]))]),
+            ManagedPolicyArns=["arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"],
         )
+
+    def _get_stack_name(self):
+        # type: () -> str
+        # TODO this is a bad stack name
+        return self._app.app_name
 
     def _deploy_template_to_cloudformation(self, cf_template):
         # TODO this is a bad stack name
-        cf_stack_name = self._app.app_name
+        cf_stack_name = self._get_stack_name()
 
         self._logger.info("Deploying cloudformation template to stack " + cf_stack_name)
 
