@@ -1,0 +1,2 @@
+class ChiliPepperException(Exception):
+    pass

@@ -29,7 +29,7 @@ TITLE_SPLIT_REGEX_HACK = re.compile("[^a-zA-Z0-9]")
 
 class Deployer:
     def __init__(self, app):
-        # type: (app.Kale) -> None
+        # type: (app.ChiliPepper) -> None
         self._app = app
 
         self._logger = logging.getLogger(__name__)
@@ -80,7 +80,7 @@ class Deployer:
         # TODO un-hardcode the requirements.txt path
         requirements_path = app_dir / "requirements.txt"
         if requirements_path.exists():
-            requirements_temp_dir = tempfile.mkdtemp(prefix="kale-")
+            requirements_temp_dir = tempfile.mkdtemp(prefix="chili-pepper-")
             try:
                 self._logger.info(
                     "Installing requirements into temporary directory " + requirements_temp_dir + "so they can be included in the deployment package"

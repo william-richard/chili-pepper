@@ -5,8 +5,8 @@ import json
 import logging
 from threading import Thread
 
-from kale.exception import KaleException
-from kale.deployer import Deployer
+from chili_pepper.exception import ChiliPepperException
+from chili_pepper.deployer import Deployer
 
 try:
     from typing import List
@@ -15,11 +15,11 @@ except ImportError:
     pass
 
 
-class InvalidFunctionSignature(KaleException):
+class InvalidFunctionSignature(ChiliPepperException):
     pass
 
 
-class InvocationError(KaleException):
+class InvocationError(ChiliPepperException):
     pass
 
 
@@ -62,7 +62,7 @@ class Result:
         return json.loads(payload)
 
 
-class Kale:
+class ChiliPepper:
     def __init__(self, app_name, bucket_name, runtime):
         # type: (str, str, str) -> None
         self._app_name = app_name
@@ -106,7 +106,7 @@ class Kale:
                 function_parameter_list = list(function_arg_spec.args)
             if function_parameter_list != ["event", "context"]:
                 raise InvalidFunctionSignature(
-                    "Kale requires that you task functions has 2 parameters - 'event' and 'context' to match what Lambda expects. Your function "
+                    "Chili-pepper requires that you task functions has 2 parameters - 'event' and 'context' to match what Lambda expects. Your function "
                     + func.__module__
                     + "."
                     + func.__name__

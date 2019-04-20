@@ -16,14 +16,14 @@ except ImportError:
     # python2.7 doesn't have typing, and I don't want to mess with mypy yet
     pass
 
-from kale.app import Kale
-from kale.deployer import Deployer
+from chili_pepper.app import ChiliPepper
+from chili_pepper.deployer import Deployer
 
 
 class CLI:
     def __init__(self):
         # set up logging
-        logger = logging.getLogger("kale")
+        logger = logging.getLogger("chili_pepper")
         logger.setLevel(logging.INFO)
 
         if len(logger.handlers) == 0:
@@ -31,7 +31,7 @@ class CLI:
             logger.addHandler(ch)
 
     def _load_app(self, app_string, app_dir=None):
-        # type: (str, Optional[str]) -> Kale
+        # type: (str, Optional[str]) -> ChiliPepper
         # make the app's module is in the path, so it can be imported
         if app_dir is not None:
             if app_dir not in sys.path:
@@ -63,10 +63,10 @@ def main():
     cli = CLI()
 
     parser = argparse.ArgumentParser(description="Serverless asynchronous tasks")
-    parser.add_argument("--app", "-A", type=str, help="The Kale application location")
+    parser.add_argument("--app", "-A", type=str, help="The Chili-Pepper application location")
     # TODO add verbose and quiet args
 
-    subparsers = parser.add_subparsers(help="Kale commands")
+    subparsers = parser.add_subparsers(help="Chili-Pepper commands")
 
     deploy_parser = subparsers.add_parser("deploy", help="Deploy functions to serverless provider")
     deploy_parser.set_defaults(func=cli.deploy)
