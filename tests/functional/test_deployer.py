@@ -1,13 +1,13 @@
 import zipfile
 import boto3
 
-from conftest import create_kale_s3_bucket, create_app_structure
-from kale.app import Kale
-from kale.deployer import Deployer
+from conftest import create_app_structure, create_chili_pepper_s3_bucket
+from chili_pepper.app import ChiliPepper
+from chili_pepper.deployer import Deployer
 
 
 def test_zip(tmp_path, request):
-    app = Kale("test_deployer_app", bucket_name="dummy", runtime="python3.7")
+    app = ChiliPepper("test_deployer_app", bucket_name="dummy", runtime="python3.7")
     deployer = Deployer(app=app)
     app_dir = create_app_structure(tmp_path, pytest_request_fixture=request)
 
@@ -19,10 +19,10 @@ def test_zip(tmp_path, request):
 
 def test_send_to_s3(tmp_path, request):
     # TODO test s3 bucket versioning
-    bucket_name = create_kale_s3_bucket()
+    bucket_name = create_chili_pepper_s3_bucket()
     app_dir = create_app_structure(tmp_path, bucket_name=bucket_name, pytest_request_fixture=request)
 
-    app = Kale("test_deployer_app", bucket_name=bucket_name, runtime="python3.7")
+    app = ChiliPepper("test_deployer_app", bucket_name=bucket_name, runtime="python3.7")
     deployer = Deployer(app=app)
 
     s3_client = boto3.client("s3")

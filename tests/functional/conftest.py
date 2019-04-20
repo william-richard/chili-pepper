@@ -40,10 +40,10 @@ def reset_sys_path():
     sys.path = original_sys_path
 
 
-def create_kale_s3_bucket():
+def create_chili_pepper_s3_bucket():
     # type: () -> str
     s3_client = boto3.client("s3")
-    bucket_name = "kale_test_bucket"
+    bucket_name = "chili_pepper_test_bucket"
     s3_client.create_bucket(Bucket=bucket_name)
     # TODO make this optional, so we can test that our code can gracefully handle when bucket versioning is not enabled
     s3_client.put_bucket_versioning(Bucket=bucket_name, VersioningConfiguration={"Status": "Enabled"})
@@ -51,7 +51,7 @@ def create_kale_s3_bucket():
 
 
 def create_app_structure(
-    tmp_path, pytest_request_fixture, bucket_name="you_forgot_to_call_conftest.create_kale_s3_bucket", runtime="python3.7", include_requirements=False
+    tmp_path, pytest_request_fixture, bucket_name="you_forgot_to_call_conftest.create_chili_pepper_s3_bucket", runtime="python3.7", include_requirements=False
 ):
     # pytest_request should be the pytest request fixture https://docs.pytest.org/en/latest/reference.html#request
     app_dir = tmp_path / "app"
@@ -59,9 +59,9 @@ def create_app_structure(
 
     tasks_py = app_dir / "tasks.py"
     tasks_py_body = """
-from kale.app import Kale
+from chili_pepper.app import ChiliPepper
 
-app = Kale(app_name="demo", bucket_name="{bucket_name}", runtime="{runtime}")
+app = ChiliPepper(app_name="demo", bucket_name="{bucket_name}", runtime="{runtime}")
 
 @app.task()
 def say_hello(event, context):
@@ -79,7 +79,7 @@ def say_hello(event, context):
     tasks_py.write_text(tasks_py_body, encoding="utf8")
 
     if include_requirements:
-        # need to find the code directory, so we can tell the lambda container to install kale
+        # need to find the code directory, so we can tell the lambda container to install chili-pepper
         test_file_path_str = str(pytest_request_fixture.fspath)
         path_head_str, path_tail_str = os.path.split(test_file_path_str)
         while path_tail_str != "tests":

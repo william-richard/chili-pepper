@@ -1,6 +1,6 @@
-from kale.app import Kale
+from chili_pepper.app import ChiliPepper
 
-app = Kale(app_name="demo", bucket_name="foobar", runtime="python3.7")
+app = ChiliPepper(app_name="demo", bucket_name="foobar", runtime="python3.7")
 
 
 @app.task()

@@ -1,15 +1,15 @@
 import pytest
-from conftest import create_kale_s3_bucket, create_app_structure
+from conftest import create_app_structure, create_chili_pepper_s3_bucket
 
-from kale.app import Kale, InvalidFunctionSignature
-from kale.main import CLI
-from kale.deployer import Deployer
+from chili_pepper.app import ChiliPepper, InvalidFunctionSignature
+from chili_pepper.main import CLI
+from chili_pepper.deployer import Deployer
 
 
 def test_task_decorator():
-    bucket_name = create_kale_s3_bucket()
+    bucket_name = create_chili_pepper_s3_bucket()
 
-    app = Kale("test_deployer_app", bucket_name=bucket_name, runtime="python3.7")
+    app = ChiliPepper("test_deployer_app", bucket_name=bucket_name, runtime="python3.7")
 
     @app.task()
     def say_hello(event, context):
@@ -20,9 +20,9 @@ def test_task_decorator():
 
 
 def test_invalid_signature_no_arguments():
-    bucket_name = create_kale_s3_bucket()
+    bucket_name = create_chili_pepper_s3_bucket()
 
-    app = Kale("test_deployer_app", bucket_name=bucket_name, runtime="python3.7")
+    app = ChiliPepper("test_deployer_app", bucket_name=bucket_name, runtime="python3.7")
 
     with pytest.raises(InvalidFunctionSignature):
 
@@ -32,9 +32,9 @@ def test_invalid_signature_no_arguments():
 
 
 def test_invalid_signature_only_event():
-    bucket_name = create_kale_s3_bucket()
+    bucket_name = create_chili_pepper_s3_bucket()
 
-    app = Kale("test_deployer_app", bucket_name=bucket_name, runtime="python3.7")
+    app = ChiliPepper("test_deployer_app", bucket_name=bucket_name, runtime="python3.7")
 
     with pytest.raises(InvalidFunctionSignature):
 
@@ -44,9 +44,9 @@ def test_invalid_signature_only_event():
 
 
 def test_invalid_signature_only_context():
-    bucket_name = create_kale_s3_bucket()
+    bucket_name = create_chili_pepper_s3_bucket()
 
-    app = Kale("test_deployer_app", bucket_name=bucket_name, runtime="python3.7")
+    app = ChiliPepper("test_deployer_app", bucket_name=bucket_name, runtime="python3.7")
 
     with pytest.raises(InvalidFunctionSignature):
 
@@ -56,9 +56,9 @@ def test_invalid_signature_only_context():
 
 
 def test_invalid_signature_extra_parameter():
-    bucket_name = create_kale_s3_bucket()
+    bucket_name = create_chili_pepper_s3_bucket()
 
-    app = Kale("test_deployer_app", bucket_name=bucket_name, runtime="python3.7")
+    app = ChiliPepper("test_deployer_app", bucket_name=bucket_name, runtime="python3.7")
 
     with pytest.raises(InvalidFunctionSignature):
 
@@ -69,7 +69,7 @@ def test_invalid_signature_extra_parameter():
 
 def test_delay_function(tmp_path, request):
     # `request` is the pytest request fixture https://docs.pytest.org/en/latest/reference.html#request
-    bucket_name = create_kale_s3_bucket()
+    bucket_name = create_chili_pepper_s3_bucket()
     app_dir = create_app_structure(tmp_path, request, bucket_name=bucket_name, include_requirements=True)
 
     cli = CLI()

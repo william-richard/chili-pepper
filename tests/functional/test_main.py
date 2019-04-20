@@ -5,13 +5,13 @@ import pprint
 import json
 from collections import OrderedDict
 
-from conftest import create_app_structure, create_kale_s3_bucket
-from kale.main import CLI
+from conftest import create_app_structure, create_chili_pepper_s3_bucket
+from chili_pepper.main import CLI
 
 
 @pytest.mark.parametrize("runtime", ["python2.7", "python3.6", "python3.7"])
 def test_deploy(tmp_path, request, runtime):
-    bucket_name = create_kale_s3_bucket()
+    bucket_name = create_chili_pepper_s3_bucket()
     app_dir = create_app_structure(tmp_path, bucket_name=bucket_name, runtime=runtime, pytest_request_fixture=request)
 
     cli = CLI()
@@ -54,7 +54,7 @@ def test_deploy(tmp_path, request, runtime):
 
 @pytest.mark.parametrize("runtime", ["python2.7", "python3.6", "python3.7"])
 def test_deployed_cf_template(tmp_path, request, runtime):
-    bucket_name = create_kale_s3_bucket()
+    bucket_name = create_chili_pepper_s3_bucket()
     app_dir = create_app_structure(tmp_path, bucket_name=bucket_name, runtime=runtime, pytest_request_fixture=request)
 
     cli = CLI()
