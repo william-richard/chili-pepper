@@ -150,6 +150,7 @@ class Deployer:
         # TODO add support for versioning
         function_handler = self._get_function_handler_string(task_function)
         title = self._get_function_logical_id(function_handler)
+
         # TODO specify the function name?  Maybe we don't care?
         return awslambda.Function(title, Code=code_property, Handler=function_handler, Role=GetAtt(role, "Arn"), Runtime=runtime)
 
