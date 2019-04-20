@@ -1,6 +1,9 @@
 # requirements for running tests
-moto
+# need lambda physical resource id
+# https://github.com/spulec/moto/pull/2156
+git+https://github.com/william-richard/moto.git#egg=moto
 pytest
 pytest-cov
+pytest-mock
 tox
 tox-pyenv

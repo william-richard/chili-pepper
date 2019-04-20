@@ -19,6 +19,10 @@ class InvalidFunctionSignature(KaleException):
     pass
 
 
+class InvocationError(KaleException):
+    pass
+
+
 class Result:
     def __init__(self, lambda_function_name, event):
         # type: (str, dict) -> None
@@ -36,18 +40,26 @@ class Result:
             def lambda_run():
                 lambda_client = boto3.client("lambda")
                 self._invoke_response = lambda_client.invoke(FunctionName=self._lambda_function_name, Payload=json.dumps(self._event))
+                return
 
             self._thread = Thread(target=lambda_run)
             self._thread.start()
         return self._thread
 
     def get(self):
-        # make sure we're started.... even though start *should* have been called by delay
-        thread = self.start()
-        thread.join()
+        if self._thread is None:
+            self.start()
+        self._thread.join()
+
         # lambda has now been invoked and _invoke_response *should* be populated
         # TODO error handling, logs from the lambda, etc
-        return json.loads(self._invoke_response["Payload"].read().decode("utf-8"))
+        # moto returns None for payload in python 3.6
+        if self._invoke_response["Payload"] is not None:
+            payload = self._invoke_response["Payload"].read().decode("utf8")
+        else:
+            raise InvocationError("No invoke response, even though the AWS lambda function has been invoked.")
+        self._logger.info("Got payload {payload} from thread {thread}".format(payload=payload, thread=self._thread))
+        return json.loads(payload)
 
 
 class Kale:

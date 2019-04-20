@@ -1,37 +1,15 @@
-import json
 import zipfile
-
 import boto3
-import pytest
 
-from conftest import create_kale_s3_bucket
+from conftest import create_kale_s3_bucket, create_app_structure
 from kale.app import Kale
 from kale.deployer import Deployer
 
 
-def _create_app_structure(tmp_path):
-    app_dir = tmp_path / "app"
-    app_dir.mkdir()
-
-    app_py = app_dir / "app.py"
-    app_py_body = """
-    # Test app
-    def hello_world():
-        print "Hello!"
-    """
-    # python 2.7 compatibility
-    # https://stackoverflow.com/a/50139419
-    if hasattr(app_py_body, "decode"):
-        app_py_body = app_py_body.decode("utf8")
-    app_py.write_text(app_py_body, encoding="utf8")
-
-    return app_dir
-
-
-def test_zip(tmp_path):
+def test_zip(tmp_path, request):
     app = Kale("test_deployer_app", bucket_name="dummy", runtime="python3.7")
     deployer = Deployer(app=app)
-    app_dir = _create_app_structure(tmp_path)
+    app_dir = create_app_structure(tmp_path, pytest_request_fixture=request)
 
     deployer._create_deployment_package(tmp_path, app_dir)
 
@@ -39,10 +17,10 @@ def test_zip(tmp_path):
     zipfile.is_zipfile(str(tmp_path / (app.app_name + ".zip")))
 
 
-def test_send_to_s3(tmp_path):
+def test_send_to_s3(tmp_path, request):
     # TODO test s3 bucket versioning
-    app_dir = _create_app_structure(tmp_path)
     bucket_name = create_kale_s3_bucket()
+    app_dir = create_app_structure(tmp_path, bucket_name=bucket_name, pytest_request_fixture=request)
 
     app = Kale("test_deployer_app", bucket_name=bucket_name, runtime="python3.7")
     deployer = Deployer(app=app)
@@ -58,48 +36,3 @@ def test_send_to_s3(tmp_path):
 
     assert actual_get_object_response["VersionId"] == "0"
     assert actual_get_object_response["Body"].read() == deployment_package_path.read_bytes()
-
-
-@pytest.mark.parametrize("runtime", ["python2.7", "python3.6", "python3.7"])
-@pytest.mark.skip()  # Moto is being stupid - don't rely on it for now
-def test_simple_lambda_deploy(tmp_path, runtime):
-    app_dir = _create_app_structure(tmp_path)
-    bucket_name = create_kale_s3_bucket()
-
-    cf_client = boto3.client("cloudformation")
-    iam_resource = boto3.resource("iam")
-    lambda_client = boto3.client("lambda")
-
-    app = Kale(app_name="test_deployer_app", bucket_name=bucket_name, runtime=runtime)
-    app._function_handles = ["app.hello_world"]  # TODO undo this private member access hack? Or just mock the Kale app object
-
-    deployer = Deployer(app=app)
-
-    deployer.deploy(tmp_path, app_dir)
-
-    cf_stack_name = app.app_name
-
-    role_detail = cf_client.describe_stack_resource(StackName=cf_stack_name, LogicalResourceId="FunctionRole")["StackResourceDetail"]
-    # the Physical ID returned by CF for an IAM role is the role id, not the role name, which is basically useless
-    function_role = [r for r in iam_resource.roles.all() if r.role_id == role_detail["PhysicalResourceId"]][0]
-
-    # I think moto is messing up the quotes so this is not valid json :(
-    assert json.loads(function_role.assume_role_policy_document.replace("'", '"')) == {
-        "Statement": [{"Action": ["sts:AssumeRole"], "Effect": "Allow", "Principal": {"Service": ["lambda.amazonaws.com"]}}]
-    }
-
-    lambda_function = lambda_client.get_function(FunctionName=("test_deployer_app.hello_world"))
-    print(lambda_function)
-    """
-    expected_function_attributes = {
-        'FunctionName': 'test_deployer_app.app.hello_world',
-        'Runtime': 'python3.7',
-        'Handler': 'app.hello_world',
-        'Role': {
-            'Ref': 'FunctionRole'
-        }
-    }
-    for expected_attribute, expected_value in expected_function_attributes.items():
-        assert expected_attribute in template_dict['Resources']['TestDeployerAppAppHelloWorld']['Properties'].keys()
-        assert template_dict['Resources']['TestDeployerAppAppHelloWorld']['Properties'][expected_attribute] == expected_value
-    """

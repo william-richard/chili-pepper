@@ -1,6 +1,7 @@
 import argparse
 import importlib
 import os
+import string
 import sys
 import logging
 
@@ -9,7 +10,11 @@ try:
 except ImportError:
     from pathlib2 import Path
 
-from typing import Optional
+try:
+    from typing import Optional
+except ImportError:
+    # python2.7 doesn't have typing, and I don't want to mess with mypy yet
+    pass
 
 from kale.app import Kale
 from kale.deployer import Deployer
@@ -21,8 +26,9 @@ class CLI:
         logger = logging.getLogger("kale")
         logger.setLevel(logging.INFO)
 
-        ch = logging.StreamHandler()
-        logger.addHandler(ch)
+        if len(logger.handlers) == 0:
+            ch = logging.StreamHandler()
+            logger.addHandler(ch)
 
     def _load_app(self, app_string, app_dir=None):
         # type: (str, Optional[str]) -> Kale
@@ -35,8 +41,13 @@ class CLI:
             if cwd not in sys.path:
                 sys.path.insert(0, cwd)
 
-        module_name, app_variable = app_string.rsplit(".")
-        app = getattr(importlib.import_module(module_name), app_variable)
+        try:
+            module_name, app_variable = app_string.rsplit(".", maxsplit=1)
+        except TypeError:
+            # python2.7 doesn't take keyword args for rsplit
+            module_name, app_variable = string.rsplit(app_string, ".", 1)
+        app_module = importlib.import_module(module_name)
+        app = getattr(app_module, app_variable)
         return app
 
     def deploy(self, args):
