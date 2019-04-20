@@ -59,8 +59,6 @@ class Deployer:
         # type: (Path, Path) -> Path
         """
         Builds a deployment package of the application
-
-        TODO add support for requirements
         """
         output_filename = dest / (self._app.app_name + ".zip")
         self._logger.info("Creating deployment package" + str(output_filename))
