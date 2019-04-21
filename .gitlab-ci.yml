@@ -63,6 +63,7 @@ deploy_staging:
   script:
     - pip install twine
     - python setup.py sdist bdist_wheel
+    - env
     - twine upload --repository-url $TEST_PYPI_REPOSITORY_URL dist/*
 
 deploy_prod:
