@@ -50,7 +50,7 @@ setuptools.setup(
     keywords="cloud serverless task job queue distributed",
     classifiers=[
         "Development Status :: 1 - Planning",
-        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+        "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 2",
