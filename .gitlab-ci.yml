@@ -15,8 +15,13 @@ before_script:
   - curl -fsSL https://get.docker.com | bash
   - pip install -e .
 
+stages:
+  - test
+  - deploy
+
 lint:
   image: python:3.7-stretch
+  stage: test
   services: []
   before_script: []
   script:
@@ -25,16 +30,48 @@ lint:
     - flake8
 
 test:2.7:
+  stage: test
   script:
     - pip install -r requirements_test.txt
     - pytest -vv tests --cov chili-pepper
 
 test:3.6:
+  stage: test
   script:
     - pip install -r requirements_test.txt
     - pytest -vv tests --cov chili-pepper
 
 test:3.7:
+  stage: test
   script:
     - pip install -r requirements_test.txt
     - pytest -vv tests --cov chili-pepper
+
+deploy_staging:
+  stage: deploy
+  image: python:3.7-stretch
+  only:
+    - master
+    - make-gitlab-deploy-to-pypi
+  except:
+    - tags
+  variables:
+    TWINE_USERNAME: $STAGING_USERNAME
+    TWINE_PASSWORD: $STAGING_PASSWORD
+  script:
+    - pip install twine
+    - python setup.py sdist bdist_wheel
+    - twine upload --repository-url $TEST_PYPI_REPOSITORY_URL dist/*
+
+deploy_prod:
+  stage: deploy
+  image: python:3.7-stretch
+  only:
+    - tags
+  variables:
+    TWINE_USERNAME: $PRODUCTION_USERNAME
+    TWINE_PASSWORD: $PRODUCTION_PASSWORD
+  script:
+    - pip install twine
+    - python setup.py sdist bdist_wheel
+    - twine upload dist/*
