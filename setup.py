@@ -13,6 +13,14 @@ version_py = os.path.join(os.path.dirname(__file__), "version.py")
 
 try:
     version_git = subprocess.check_output(["git", "describe", "--tags"]).decode().rstrip()
+    # this will result in 2 possible answers
+    # An exact tag (0.0.1) or relative to an exact tag (0.0.1-2-abc123)
+    # The 2nd case (0.0.1-2-abc123) is not considered valid by https://www.python.org/dev/peps/pep-0440/
+    # so adjust it to create a dev release tag.  This won't be unique, but we should only be pushing to
+    # test pypi when a merge to master happens, so it should work out
+    if "-" in version_git:
+        split_version_git = version_git.split("-")[0]
+        version_git = split_version_git[0] + ".dev" + split_version_git[1]
 except Exception:
     with open(version_py, "r") as fh:
         version_git = fh.read().strip().split("=")[-1].replace('"', "")
