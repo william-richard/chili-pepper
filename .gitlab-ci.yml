@@ -80,4 +80,4 @@ deploy_prod:
     - pip install twine
     - python setup.py sdist bdist_wheel
     - env
-    - twine upload dist/*
+    - twine upload --verbose dist/*
