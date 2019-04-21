@@ -64,7 +64,8 @@ deploy_staging:
     - pip install twine
     - python setup.py sdist bdist_wheel
     - env
-    - twine upload --repository-url $TEST_PYPI_REPOSITORY_URL dist/*
+    - twine check dist/*
+    - twine upload --repository-url $TEST_PYPI_REPOSITORY_URL --verbose dist/*
 
 deploy_prod:
   stage: deploy
@@ -80,4 +81,5 @@ deploy_prod:
     - pip install twine
     - python setup.py sdist bdist_wheel
     - env
-    - twine upload --verbose dist/*
+    - twine check dist/*
+    - twine upload dist/*
