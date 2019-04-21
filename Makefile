@@ -9,4 +9,8 @@ lint:
 	flake8
 
 clean:
-	find . -name '__pycache__' -delete -print -o -name '*.pyc' -delete -print
+	find . -name '__pycache__' -delete -print -o -name '*.pyc' -delete -print -o  -name '*.pyo' -delete -print
+	rm -rf build/
+	rm -rf dist/
+	rm -rf *.egg-info
+
