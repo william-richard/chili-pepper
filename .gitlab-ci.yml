@@ -33,19 +33,19 @@ test:2.7:
   stage: test
   script:
     - pip install -r requirements_test.txt
-    - pytest -vv tests --cov chili-pepper
+    - pytest -vv tests --cov chili_pepper
 
 test:3.6:
   stage: test
   script:
     - pip install -r requirements_test.txt
-    - pytest -vv tests --cov chili-pepper
+    - pytest -vv tests --cov chili_pepper
 
 test:3.7:
   stage: test
   script:
     - pip install -r requirements_test.txt
-    - pytest -vv tests --cov chili-pepper
+    - pytest -vv tests --cov chili_pepper
 
 deploy_staging:
   stage: deploy
