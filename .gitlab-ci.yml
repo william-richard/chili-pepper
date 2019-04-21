@@ -16,36 +16,36 @@ before_script:
   - pip install -e .
 
 stages:
-  - test
+  #- test
   - deploy
 
-lint:
-  image: python:3.7-stretch
-  stage: test
-  services: []
-  before_script: []
-  script:
-    - pip install -r requirements_lint.txt
-    - black --check --diff .
-    - flake8
-
-test:2.7:
-  stage: test
-  script:
-    - pip install -r requirements_test.txt
-    - pytest -vv tests --cov chili_pepper
-
-test:3.6:
-  stage: test
-  script:
-    - pip install -r requirements_test.txt
-    - pytest -vv tests --cov chili_pepper
-
-test:3.7:
-  stage: test
-  script:
-    - pip install -r requirements_test.txt
-    - pytest -vv tests --cov chili_pepper
+#lint:
+#  image: python:3.7-stretch
+#  stage: test
+#  services: []
+#  before_script: []
+#  script:
+#    - pip install -r requirements_lint.txt
+#    - black --check --diff .
+#    - flake8
+#
+#test:2.7:
+#  stage: test
+#  script:
+#    - pip install -r requirements_test.txt
+#    - pytest -vv tests --cov chili_pepper
+#
+#test:3.6:
+#  stage: test
+#  script:
+#    - pip install -r requirements_test.txt
+#    - pytest -vv tests --cov chili_pepper
+#
+#test:3.7:
+#  stage: test
+#  script:
+#    - pip install -r requirements_test.txt
+#    - pytest -vv tests --cov chili_pepper
 
 deploy_staging:
   stage: deploy
