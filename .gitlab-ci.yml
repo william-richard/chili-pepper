@@ -1,9 +1,5 @@
 image: python:3.7-stretch
 
-services:
-  - docker:dind
-
-
 variables:
   DOCKER_HOST: tcp://docker:2375
   DOCKER_DRIVER: overlay2
@@ -15,26 +11,79 @@ before_script:
   - curl -fsSL https://get.docker.com | bash
   - pip install -e .
 
+stages:
+  - test
+  - deploy
+
 lint:
-  image: python:3.7-stretch
-  services: []
-  before_script: []
+  stage: test
   script:
     - pip install -r requirements_lint.txt
     - black --check --diff .
     - flake8
 
 test:2.7:
+  image: python:2.7-stretch
+  stage: test
+  services:
+    - docker:dind
+  before_script:
+    - curl -fsSL https://get.docker.com | bash
+    - pip install -e .
   script:
     - pip install -r requirements_test.txt
-    - pytest -vv tests --cov chili-pepper
+    - pytest -vv tests --cov chili_pepper
 
 test:3.6:
+  image: python:3.6-stretch
+  stage: test
+  services:
+    - docker:dind
+  before_script:
+    - curl -fsSL https://get.docker.com | bash
+    - pip install -e .
   script:
     - pip install -r requirements_test.txt
-    - pytest -vv tests --cov chili-pepper
+    - pytest -vv tests --cov chili_pepper
 
 test:3.7:
+  image: python:3.7-stretch
+  stage: test
+  services:
+    - docker:dind
+  before_script:
+    - curl -fsSL https://get.docker.com | bash
+    - pip install -e .
   script:
     - pip install -r requirements_test.txt
-    - pytest -vv tests --cov chili-pepper
+    - pytest -vv tests --cov chili_pepper
+
+deploy_staging:
+  stage: deploy
+  only:
+    - master
+  except:
+    - tags
+  variables:
+    TWINE_USERNAME: $STAGING_USERNAME
+    TWINE_PASSWORD: $STAGING_PASSWORD
+  script:
+    - pip install twine
+    - python setup.py sdist bdist_wheel
+    - env
+    - twine check dist/*
+    - twine upload --repository-url $TEST_PYPI_REPOSITORY_URL --verbose dist/*
+
+deploy_prod:
+  stage: deploy
+  only:
+    - tags
+  variables:
+    TWINE_USERNAME: $PRODUCTION_USERNAME
+    TWINE_PASSWORD: $PRODUCTION_PASSWORD
+  script:
+    - pip install twine
+    - python setup.py sdist bdist_wheel
+    - env
+    - twine check dist/*
+    - twine upload dist/*
