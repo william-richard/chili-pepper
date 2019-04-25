@@ -7,7 +7,10 @@ from chili_pepper.deployer import Deployer
 
 
 def test_zip(tmp_path, request):
-    app = ChiliPepper("test_deployer_app", bucket_name="dummy", runtime="python3.7")
+    app = ChiliPepper().create_app("test_deployer_app")
+    app.conf["aws"]["bucket_name"] = "dummy"
+    app.conf["aws"]["runtime"] = "python3.7"
+
     deployer = Deployer(app=app)
     app_dir = create_app_structure(tmp_path, pytest_request_fixture=request)
 
@@ -22,7 +25,10 @@ def test_send_to_s3(tmp_path, request):
     bucket_name = create_chili_pepper_s3_bucket()
     app_dir = create_app_structure(tmp_path, bucket_name=bucket_name, pytest_request_fixture=request)
 
-    app = ChiliPepper("test_deployer_app", bucket_name=bucket_name, runtime="python3.7")
+    app = ChiliPepper().create_app("test_deployer_app")
+    app.conf["aws"]["bucket_name"] = bucket_name
+    app.conf["aws"]["runtime"] = "python3.7"
+
     deployer = Deployer(app=app)
 
     s3_client = boto3.client("s3")

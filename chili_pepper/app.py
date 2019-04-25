@@ -1,12 +1,14 @@
 import builtins
 import inspect
 import boto3
+from enum import Enum
 import json
 import logging
 from threading import Thread
 
 from chili_pepper.exception import ChiliPepperException
 from chili_pepper.deployer import Deployer
+from chili_pepper.config import Config
 
 try:
     from typing import List
@@ -62,14 +64,26 @@ class Result:
         return json.loads(payload)
 
 
+class AppProvider(Enum):
+    AWS = 1
+
+
 class ChiliPepper:
-    def __init__(self, app_name, bucket_name, runtime):
-        # type: (str, str, str) -> None
+    def create_app(self, app_name, app_provider=AppProvider.AWS, config=Config()):
+        # type: (str, AppProvider) -> App
+        if app_provider == AppProvider.AWS:
+            return AwsApp(app_name, config)
+        else:
+            raise ChiliPepperException("Unknown app provider {app_provider}".format(app_provider=app_provider))
+
+
+class App:
+    def __init__(self, app_name, config=Config()):
+        # type: (str, Config) -> None
         self._app_name = app_name
-        self._bucket_name = bucket_name
-        self._runtime = runtime  # TODO should runtime be set by sys.version_info?
-        self._task_functions = list()
+        self.conf = config
         self._logger = logging.getLogger(__name__)
+        self._task_functions = list()
 
     @property
     def app_name(self):
@@ -77,19 +91,24 @@ class ChiliPepper:
         return self._app_name
 
     @property
+    def task_functions(self):
+        # type: () -> List[builtins.function]
+        return self._task_functions
+
+    def task(self):
+        raise NotImplementedError()
+
+
+class AwsApp(App):
+    @property
     def bucket_name(self):
         # type: () -> str
-        return self._bucket_name
+        return self.conf["aws"]["bucket_name"]
 
     @property
     def runtime(self):
         # type: () -> str
-        return self._runtime
-
-    @property
-    def task_functions(self):
-        # type: () -> List[builtins.function]
-        return self._task_functions
+        return self.conf["aws"]["runtime"]  # TODO should runtime be set by sys.version_info?
 
     def task(self):
         def _decorator(func):
