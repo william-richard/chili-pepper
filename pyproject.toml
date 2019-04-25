@@ -1,3 +1,6 @@
 [tool.black]
 target_version = ["py36", "py37"]
 line_length = 160
+
+[build-system]
+requires = ["setuptools", "wheel"]
