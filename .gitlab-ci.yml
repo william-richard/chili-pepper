@@ -9,7 +9,7 @@ variables:
 
 before_script:
   - curl -fsSL https://get.docker.com | bash
-  - pip install -e .
+  - pip install -e --no-use-pep517 .
 
 stages:
   - test
@@ -29,7 +29,7 @@ test:2.7:
     - docker:dind
   before_script:
     - curl -fsSL https://get.docker.com | bash
-    - pip install -e .
+    - pip install -e --no-use-pep517 .
   script:
     - pip install -r requirements_test.txt
     - pytest -vv tests --cov chili_pepper
@@ -41,7 +41,7 @@ test:3.6:
     - docker:dind
   before_script:
     - curl -fsSL https://get.docker.com | bash
-    - pip install -e .
+    - pip install -e --no-use-pep517 .
   script:
     - pip install -r requirements_test.txt
     - pytest -vv tests --cov chili_pepper
@@ -53,7 +53,7 @@ test:3.7:
     - docker:dind
   before_script:
     - curl -fsSL https://get.docker.com | bash
-    - pip install -e .
+    - pip install -e --no-use-pep517 .
   script:
     - pip install -r requirements_test.txt
     - pytest -vv tests --cov chili_pepper
