@@ -19,7 +19,7 @@ try:
     # so adjust it to create a dev release tag.  This won't be unique, but we should only be pushing to
     # test pypi when a merge to master happens, so it should work out
     if "-" in version_git:
-        split_version_git = version_git.split("-")[0]
+        split_version_git = version_git.split("-")
         version_git = split_version_git[0] + ".dev" + split_version_git[1]
 except Exception:
     with open(version_py, "r") as fh:
