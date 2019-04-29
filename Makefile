@@ -1,7 +1,7 @@
 .PHONY: flake8 test install-latest-local clean
 
 install-latest-local:
-	pip install -e . --no-use-pep517
+	pip install  --no-use-pep517 -e .
 	pip install -r requirements.txt
 
 lint:
