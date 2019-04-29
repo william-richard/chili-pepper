@@ -61,7 +61,9 @@ def create_app_structure(
     tasks_py_body = """
 from chili_pepper.app import ChiliPepper
 
-app = ChiliPepper(app_name="demo", bucket_name="{bucket_name}", runtime="{runtime}")
+app = ChiliPepper().create_app(app_name="demo")
+app.conf['aws']['bucket_name'] = "{bucket_name}"
+app.conf['aws']['runtime'] =  "{runtime}"
 
 @app.task()
 def say_hello(event, context):
