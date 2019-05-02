@@ -53,9 +53,12 @@ def test_deploy(tmp_path, request, runtime):
 
 
 @pytest.mark.parametrize("runtime", ["python2.7", "python3.6", "python3.7"])
-def test_deployed_cf_template(tmp_path, request, runtime):
+@pytest.mark.parametrize("environment_variables", [dict(), {"my_key": "my_value"}])
+def test_deployed_cf_template(tmp_path, request, runtime, environment_variables):
     bucket_name = create_chili_pepper_s3_bucket()
-    app_dir = create_app_structure(tmp_path, bucket_name=bucket_name, runtime=runtime, pytest_request_fixture=request)
+    app_dir = create_app_structure(
+        tmp_path, bucket_name=bucket_name, runtime=runtime, pytest_request_fixture=request, environment_variables=environment_variables
+    )
 
     cli = CLI()
     fake_args = argparse.Namespace(app="tasks.app", app_dir=str(app_dir), deployment_package_dir=str(tmp_path))
@@ -92,5 +95,6 @@ def test_deployed_cf_template(tmp_path, request, runtime):
     assert lambda_function_properties["Code"] == OrderedDict([("S3Bucket", bucket_name), ("S3Key", "demo_deployment_package.zip"), ("S3ObjectVersion", "0")])
     assert lambda_function_properties["Runtime"] == runtime
     assert lambda_function_properties["Handler"] == "tasks.say_hello"
+    assert lambda_function_properties["Environment"] == OrderedDict([("Variables", environment_variables)])
 
     assert len(stack_resources) == 2
