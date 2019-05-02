@@ -19,7 +19,10 @@ except ImportError:
     from pathlib2 import Path
 
 try:
-    from typing import List
+    from typing import List, TYPE_CHECKING
+
+    if TYPE_CHECKING:
+        from app import TaskFunction
 except ImportError:
     # typing isn't in python2.7 and I don't want to deal with fixing it right now
     pass
@@ -133,24 +136,31 @@ class Deployer:
         self._logger.info("Done generating cloudformation template")
         return template
 
-    def _get_function_handler_string(self, task_function):
+    def _get_function_handler_string(self, python_function):
         # type: (builtins.function) -> str
-        module_name = task_function.__module__
-        return module_name + "." + task_function.__name__
+        module_name = python_function.__module__
+        return module_name + "." + python_function.__name__
 
     def _get_function_logical_id(self, function_handler):
         # type: (str) -> str
         return "".join(part.capitalize() for part in TITLE_SPLIT_REGEX_HACK.split(function_handler))  # TODO this will not work in general
 
     def _create_lambda_function(self, code_property, task_function, role, runtime):
-        # type: (awslambda.Code, builtins.function, iam.Role, str) -> None
+        # type: (awslambda.Code, TaskFunction, iam.Role, str) -> None
         # TODO customizable memory and other attributes
         # TODO add support for versioning
-        function_handler = self._get_function_handler_string(task_function)
+        function_handler = self._get_function_handler_string(task_function.func)
         title = self._get_function_logical_id(function_handler)
 
         # TODO specify the function name?  Maybe we don't care?
-        return awslambda.Function(title, Code=code_property, Handler=function_handler, Role=GetAtt(role, "Arn"), Runtime=runtime)
+        return awslambda.Function(
+            title,
+            Code=code_property,
+            Handler=function_handler,
+            Role=GetAtt(role, "Arn"),
+            Runtime=runtime,
+            Environment=awslambda.Environment(Variables=task_function.environment_variables),
+        )
 
     def _create_role(self):
         # TODO set a role name here? Instead of relying on cloudformation to create a random nonsense string for the name

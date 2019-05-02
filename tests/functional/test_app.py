@@ -1,7 +1,7 @@
 import pytest
 from conftest import create_app_structure, create_chili_pepper_s3_bucket
 
-from chili_pepper.app import ChiliPepper, InvalidFunctionSignature
+from chili_pepper.app import ChiliPepper, InvalidFunctionSignature, TaskFunction
 from chili_pepper.main import CLI
 from chili_pepper.deployer import Deployer
 
@@ -18,7 +18,26 @@ def test_task_decorator():
         return "Hello!"
 
     assert hasattr(say_hello, "delay")
-    assert app.task_functions == [say_hello]
+    assert app.task_functions == [TaskFunction(say_hello)]
+
+
+def test_task_decorator_environment_variables():
+    bucket_name = create_chili_pepper_s3_bucket()
+
+    app = ChiliPepper().create_app("test_deployer_app")
+    app.conf["aws"]["bucket_name"] = bucket_name
+    app.conf["aws"]["runtime"] = "python3.7"
+
+    env_vars = {"test_app_key": "test_app_value"}
+
+    @app.task(environment_variables=env_vars)
+    def say_hello(event, context):
+        return "Hello!"
+
+    assert hasattr(say_hello, "delay")
+    expected_task_function = TaskFunction(say_hello, environment_variables=env_vars)
+    print(str(app.task_functions[0]))
+    assert app.task_functions == [expected_task_function]
 
 
 def test_invalid_signature_no_arguments():
@@ -87,7 +106,7 @@ def test_delay_function(tmp_path, request):
     deployer = Deployer(app)
     deployer.deploy(tmp_path, app_dir)
 
-    say_hello_function = [f for f in app.task_functions if f.__name__ == "say_hello"][0]
+    say_hello_function = [f.func for f in app.task_functions if f.func.__name__ == "say_hello"][0]
     say_hello_result = say_hello_function.delay({})
 
     # moto doesn't handle return :(

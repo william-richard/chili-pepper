@@ -51,8 +51,16 @@ def create_chili_pepper_s3_bucket():
 
 
 def create_app_structure(
-    tmp_path, pytest_request_fixture, bucket_name="you_forgot_to_call_conftest.create_chili_pepper_s3_bucket", runtime="python3.7", include_requirements=False
+    tmp_path,
+    pytest_request_fixture,
+    bucket_name="you_forgot_to_call_conftest.create_chili_pepper_s3_bucket",
+    runtime="python3.7",
+    include_requirements=False,
+    environment_variables=None,
 ):
+    if environment_variables is None:
+        environment_variables = dict()
+
     # pytest_request should be the pytest request fixture https://docs.pytest.org/en/latest/reference.html#request
     app_dir = tmp_path / "app"
     app_dir.mkdir()
@@ -65,14 +73,14 @@ app = ChiliPepper().create_app(app_name="demo")
 app.conf['aws']['bucket_name'] = "{bucket_name}"
 app.conf['aws']['runtime'] =  "{runtime}"
 
-@app.task()
+@app.task(environment_variables={environment_variables})
 def say_hello(event, context):
     return_value = dict()
     return_value["Hello"] = "World!"
     print(return_value) # moto doesn't handle returns from lambda functions :(
     return return_value
     """.format(
-        bucket_name=bucket_name, runtime=runtime
+        bucket_name=bucket_name, runtime=runtime, environment_variables=environment_variables
     )
     # python 2.7 compatibility
     # https://stackoverflow.com/a/50139419

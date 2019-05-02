@@ -11,7 +11,7 @@ from chili_pepper.deployer import Deployer
 from chili_pepper.config import Config
 
 try:
-    from typing import List
+    from typing import List, Optional, Dict
 except ImportError:
     # python2.7 doesn't have typing, and I don't want to mess with mypy yet
     pass
@@ -77,6 +77,43 @@ class ChiliPepper:
             raise ChiliPepperException("Unknown app provider {app_provider}".format(app_provider=app_provider))
 
 
+class TaskFunction:
+    def __init__(self, func, environment_variables=None):
+        # type: (builtins.function, Optional[Dict]) -> None
+        self._func = func
+        self._environment_variables = environment_variables if environment_variables is not None else dict()
+
+    @property
+    def func(self):
+        # type: () -> builtins.function
+        return self._func
+
+    @property
+    def environment_variables(self):
+        # type: () -> Dict
+        return self._environment_variables
+
+    def __eq__(self, other):
+        # type: (TaskFunction) -> bool
+        return (
+            hasattr(other, "func")
+            and self.func == other.func
+            and hasattr(other, "environment_variables")
+            and self.environment_variables == other.environment_variables
+        )
+
+    def __ne__(self, other):
+        # type: (TaskFunction) -> bool
+        # need to implement because of python2.7
+        # https://docs.python.org/2.7/reference/datamodel.html#object.__ne__
+        return not (self == other)
+
+    def __str__(self):
+        # type: () -> str
+        # TODO unhardcode the class name
+        return "TaskFunction {my_module}.{my_func_name}".format(my_module=self._func.__module__, my_func_name=self.func.__name__)
+
+
 class App:
     def __init__(self, app_name, config=Config()):
         # type: (str, Config) -> None
@@ -92,7 +129,7 @@ class App:
 
     @property
     def task_functions(self):
-        # type: () -> List[builtins.function]
+        # type: () -> List[TaskFunction]
         return self._task_functions
 
     def task(self):
@@ -110,8 +147,8 @@ class AwsApp(App):
         # type: () -> str
         return self.conf["aws"]["runtime"]  # TODO should runtime be set by sys.version_info?
 
-    def task(self):
-        def _decorator(func):
+    def task(self, environment_variables=None):
+        def _decorator(func,):
             # Ensure that the function signature matches what lambda expects
             # otherwise it will not be callabale from lambda
             # https://docs.aws.amazon.com/lambda/latest/dg/python-programming-model-handler-types.html
@@ -133,7 +170,7 @@ class AwsApp(App):
                     + str(function_parameter_list)
                 )
 
-            self._task_functions.append(func)
+            self._task_functions.append(TaskFunction(func, environment_variables=environment_variables))
 
             def _delay_wrapper(event):
                 # see https://docs.aws.amazon.com/lambda/latest/dg/python-programming-model-handler-types.html
