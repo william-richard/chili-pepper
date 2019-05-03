@@ -1,14 +1,16 @@
 import builtins
 import inspect
-import boto3
-from enum import Enum
 import json
 import logging
+from copy import deepcopy
+from enum import Enum
 from threading import Thread
 
-from chili_pepper.exception import ChiliPepperException
-from chili_pepper.deployer import Deployer
+import boto3
+
 from chili_pepper.config import Config
+from chili_pepper.deployer import Deployer
+from chili_pepper.exception import ChiliPepperException
 
 try:
     from typing import List, Optional, Dict
@@ -69,8 +71,10 @@ class AppProvider(Enum):
 
 
 class ChiliPepper:
-    def create_app(self, app_name, app_provider=AppProvider.AWS, config=Config()):
-        # type: (str, AppProvider) -> App
+    def create_app(self, app_name, app_provider=AppProvider.AWS, config=None):
+        # type: (str, AppProvider, Optional[Config]) -> App
+        if config is None:
+            config = Config()
         if app_provider == AppProvider.AWS:
             return AwsApp(app_name, config)
         else:
@@ -115,8 +119,11 @@ class TaskFunction:
 
 
 class App:
-    def __init__(self, app_name, config=Config()):
-        # type: (str, Config) -> None
+    def __init__(self, app_name, config=None):
+        # type: (str, Optional[Config]) -> None
+        if config is None:
+            config = Config()
+
         self._app_name = app_name
         self.conf = config
         self._logger = logging.getLogger(__name__)
@@ -148,6 +155,11 @@ class AwsApp(App):
         return self.conf["aws"]["runtime"]  # TODO should runtime be set by sys.version_info?
 
     def task(self, environment_variables=None):
+        # type: (Optional[Dict]) -> builtins.func
+
+        if environment_variables is None:
+            environment_variables = dict()
+
         def _decorator(func,):
             # Ensure that the function signature matches what lambda expects
             # otherwise it will not be callabale from lambda
@@ -170,7 +182,11 @@ class AwsApp(App):
                     + str(function_parameter_list)
                 )
 
-            self._task_functions.append(TaskFunction(func, environment_variables=environment_variables))
+            # combine the default and default env vars
+            task_environment_variables = deepcopy(self.conf["default_environment_variables"])
+            task_environment_variables.update(environment_variables)
+
+            self._task_functions.append(TaskFunction(func, environment_variables=task_environment_variables))
 
             def _delay_wrapper(event):
                 # see https://docs.aws.amazon.com/lambda/latest/dg/python-programming-model-handler-types.html
