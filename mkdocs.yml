@@ -1,0 +1,7 @@
+site_name: chili-pepper
+repo_url: https://gitlab.com/william-richard/chili-pepper
+theme:
+  name: 'material'
+nav:
+- Chili-Pepper: 'index.md'
+- License: 'license.md'
