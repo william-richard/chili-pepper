@@ -36,7 +36,52 @@ def test_task_decorator_environment_variables():
 
     assert hasattr(say_hello, "delay")
     expected_task_function = TaskFunction(say_hello, environment_variables=env_vars)
-    print(str(app.task_functions[0]))
+    print(app.task_functions[0].environment_variables)
+    print(expected_task_function.environment_variables)
+    assert app.task_functions == [expected_task_function]
+
+
+def test_app_env_vars():
+    bucket_name = create_chili_pepper_s3_bucket()
+
+    app = ChiliPepper().create_app("test_deployer_app")
+    app.conf["aws"]["bucket_name"] = bucket_name
+    app.conf["aws"]["runtime"] = "python3.7"
+
+    app.conf["default_environment_variables"] = {"test_app_key": "test_app_value"}
+
+    @app.task()
+    def say_hello(event, context):
+        return "Hello!"
+
+    expected_task_function = TaskFunction(say_hello, environment_variables=app.conf["default_environment_variables"])
+    print(app.task_functions[0])
+    print(expected_task_function)
+    assert app.task_functions == [expected_task_function]
+
+
+def test_task_decorator_env_var_override():
+    bucket_name = create_chili_pepper_s3_bucket()
+
+    app = ChiliPepper().create_app("test_deployer_app")
+    app.conf["aws"]["bucket_name"] = bucket_name
+    app.conf["aws"]["runtime"] = "python3.7"
+
+    default_key = "default_key"
+    overridden_key = "im_going_to_be_overridden_key"
+
+    app.conf["default_environment_variables"] = {overridden_key: "short_lived", default_key: "default_value"}
+    task_env_vars = {overridden_key: "LONG_LIVED"}
+
+    @app.task(environment_variables=task_env_vars)
+    def say_hello(event, context):
+        return "Hello!"
+
+    expected_env_vars = {default_key: app.conf["default_environment_variables"][default_key], overridden_key: task_env_vars[overridden_key]}
+
+    expected_task_function = TaskFunction(say_hello, environment_variables=expected_env_vars)
+    print(app.task_functions[0].environment_variables)
+    print(expected_task_function.environment_variables)
     assert app.task_functions == [expected_task_function]
 
 
