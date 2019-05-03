@@ -8,6 +8,7 @@ class Config(MutableMapping):
     def __init__(self):
         self._config = dict()
         self._config["aws"] = dict()
+        self._config["default_environment_variables"] = dict()
 
     def __getitem__(self, key):
         return self._config.__getitem__(key)
@@ -23,3 +24,6 @@ class Config(MutableMapping):
 
     def __len__(self):
         return self._config.__len__()
+
+    def __repr__(self):
+        return repr(self._config)

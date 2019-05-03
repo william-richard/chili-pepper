@@ -72,6 +72,7 @@ from chili_pepper.app import ChiliPepper
 app = ChiliPepper().create_app(app_name="demo")
 app.conf['aws']['bucket_name'] = "{bucket_name}"
 app.conf['aws']['runtime'] =  "{runtime}"
+print(f"Inside task_py_body {{app.conf}}")
 
 @app.task(environment_variables={environment_variables})
 def say_hello(event, context):
