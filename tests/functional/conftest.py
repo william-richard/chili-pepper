@@ -4,12 +4,12 @@ import sys
 
 import boto3
 import pytest
-from moto import mock_cloudformation, mock_iam, mock_lambda, mock_s3
+from moto import mock_cloudformation, mock_iam, mock_lambda, mock_s3, mock_kms
 
 
 @pytest.fixture(autouse=True)
 def apply_moto_mocks():
-    with mock_cloudformation(), mock_iam(), mock_s3(), mock_lambda():
+    with mock_cloudformation(), mock_iam(), mock_s3(), mock_lambda(), mock_kms():
         boto3.setup_default_session()
         yield None
 
@@ -57,6 +57,7 @@ def create_app_structure(
     runtime="python3.7",
     include_requirements=False,
     environment_variables=None,
+    kms_key_arn=None,
 ):
     if environment_variables is None:
         environment_variables = dict()
@@ -72,6 +73,7 @@ from chili_pepper.app import ChiliPepper
 app = ChiliPepper().create_app(app_name="demo")
 app.conf['aws']['bucket_name'] = "{bucket_name}"
 app.conf['aws']['runtime'] =  "{runtime}"
+{kms_key_arn_line}
 
 @app.task(environment_variables={environment_variables})
 def say_hello(event, context):
@@ -80,7 +82,10 @@ def say_hello(event, context):
     print(return_value) # moto doesn't handle returns from lambda functions :(
     return return_value
     """.format(
-        bucket_name=bucket_name, runtime=runtime, environment_variables=environment_variables
+        bucket_name=bucket_name,
+        runtime=runtime,
+        environment_variables=environment_variables,
+        kms_key_arn_line=f"app.conf['aws']['kms_key'] = '{kms_key_arn}'" if kms_key_arn else "",
     )
     # python 2.7 compatibility
     # https://stackoverflow.com/a/50139419

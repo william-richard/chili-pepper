@@ -179,15 +179,20 @@ class Deployer:
         function_handler = self._get_function_handler_string(task_function.func)
         title = self._get_function_logical_id(function_handler)
 
+        function_kwargs = {
+            "Code": code_property,
+            "Handler": function_handler,
+            "Role": GetAtt(role, "Arn"),
+            "Runtime": runtime,
+            "Environment": awslambda.Environment(Variables=task_function.environment_variables),
+        }
+        if self._app.kms_key_arn is not None:
+            function_kwargs["KmsKeyArn"] = self._app.kms_key_arn
+
+        print(function_kwargs)
+
         # TODO specify the function name?  Maybe we don't care?
-        return awslambda.Function(
-            title,
-            Code=code_property,
-            Handler=function_handler,
-            Role=GetAtt(role, "Arn"),
-            Runtime=runtime,
-            Environment=awslambda.Environment(Variables=task_function.environment_variables),
-        )
+        return awslambda.Function(title, **function_kwargs)
 
     def _create_role(self):
         # TODO set a role name here? Instead of relying on cloudformation to create a random nonsense string for the name

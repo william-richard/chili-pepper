@@ -54,10 +54,18 @@ def test_deploy(tmp_path, request, runtime):
 
 @pytest.mark.parametrize("runtime", ["python2.7", "python3.6", "python3.7"])
 @pytest.mark.parametrize("environment_variables", [dict(), {"my_key": "my_value"}])
-def test_deployed_cf_template(tmp_path, request, runtime, environment_variables):
+@pytest.mark.parametrize("use_custom_kms_key", [True, False], ids=lambda t: "use_custom_kms_key" if t else "use_default_kms_key")
+def test_deployed_cf_template(tmp_path, request, runtime, environment_variables, use_custom_kms_key):
     bucket_name = create_chili_pepper_s3_bucket()
+    if use_custom_kms_key:
+        kms_client = boto3.client("kms")
+        create_key_response = kms_client.create_key(Origin="AWS_KMS")
+        kms_key_arn = create_key_response["KeyMetadata"]["Arn"]
+    else:
+        kms_key_arn = None
+
     app_dir = create_app_structure(
-        tmp_path, bucket_name=bucket_name, runtime=runtime, pytest_request_fixture=request, environment_variables=environment_variables
+        tmp_path, bucket_name=bucket_name, runtime=runtime, pytest_request_fixture=request, environment_variables=environment_variables, kms_key_arn=kms_key_arn
     )
 
     cli = CLI()
@@ -96,5 +104,10 @@ def test_deployed_cf_template(tmp_path, request, runtime, environment_variables)
     assert lambda_function_properties["Runtime"] == runtime
     assert lambda_function_properties["Handler"] == "tasks.say_hello"
     assert lambda_function_properties["Environment"] == OrderedDict([("Variables", environment_variables)])
+    if use_custom_kms_key:
+        assert lambda_function_properties["KmsKeyArn"] == kms_key_arn
+    else:
+        assert "KmsKeyArn" not in lambda_function_properties
+
 
     assert len(stack_resources) == 2
