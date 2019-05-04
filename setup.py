@@ -51,7 +51,7 @@ setuptools.setup(
     license="Apache 2.0",
     packages=setuptools.find_packages(),
     entry_points={"console_scripts": ["chili = chili_pepper.main:main"]},
-    install_requires=["awacs", "pathlib2", "troposphere"],
+    install_requires=["awacs", "boto3", "pathlib2", "troposphere"],
     python_requires=">=2.6, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, <4",
     url="https://gitlab.com/william-richard/chili-pepper",
     project_urls={"Source": "https://gitlab.com/william-richard/chili-pepper"},
