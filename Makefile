@@ -1,4 +1,4 @@
-.PHONY: flake8 test install-latest-local clean dev-osx
+.PHONY: flake8 test install-latest-local clean
 
 DOCKER := $(shell command -v docker 2> /dev/null)
 AZURE_FUNC := $(shell command -v func 2> /dev/null)
@@ -14,6 +14,7 @@ endif
 install-latest-local:
 	pip install  --no-use-pep517 -e .
 	pip install -r requirements.txt
+	pip install -r requirements_docs.txt
 
 lint:
 	black .

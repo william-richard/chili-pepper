@@ -33,12 +33,25 @@ TITLE_SPLIT_REGEX_HACK = re.compile("[^a-zA-Z0-9]")
 class Deployer:
     def __init__(self, app):
         # type: (app.ChiliPepper) -> None
+        """
+        Args:
+            app (app.ChiliPepper): The Chili-Pepper app to be deployed
+        """
         self._app = app
 
         self._logger = logging.getLogger(__name__)
 
     def deploy(self, dest, app_dir):
         # type: (Path, Path) -> str
+        """Deploys the chili-pepper app
+
+        Args:
+            dest (Path): The destination for the deployment package.
+            app_dir (Path): The location of the application source code.
+
+        Returns:
+            str: The cloudformation template that was deployed to AWS.
+        """
         self._logger.info("Starting to deploy")
 
         deployment_package_path = self._create_deployment_package(dest, app_dir)
@@ -48,6 +61,14 @@ class Deployer:
 
     def get_function_id(self, python_function):
         # type: (builtins.function) -> str
+        """Get a unique identifier for the serverless function
+
+        Args:
+            python_function (builtins.function): The python function.  Must have been included in the Chili-Pepper app.
+
+        Returns:
+            str: The unique serverless function identification string
+        """
         # TODO it's a little weird that this lives on the deployer - I'm not sure what the right abstraction is
         lambda_function_cf_logical_id = self._get_function_logical_id(self._get_function_handler_string(python_function))
         stack_name = self._get_stack_name()
@@ -60,8 +81,14 @@ class Deployer:
 
     def _create_deployment_package(self, dest, app_dir):
         # type: (Path, Path) -> Path
-        """
-        Builds a deployment package of the application
+        """Builds a deployment package of the application
+
+        Args:
+            dest (Path): The deployment package destianion
+            app_dir (Path): The application source code location
+
+        Returns:
+            Path: The location of the deployment package zipfile
         """
         output_filename = dest / (self._app.app_name + ".zip")
         self._logger.info("Creating deployment package" + str(output_filename))
