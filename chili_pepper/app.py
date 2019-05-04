@@ -20,16 +20,37 @@ except ImportError:
 
 
 class InvalidFunctionSignature(ChiliPepperException):
+    """Function Signature does not match required specifications
+
+    Cloud providers require that functions have a specific signature.
+    This exception is raised when a task does not match the required signature.
+
+    """
+
     pass
 
 
 class InvocationError(ChiliPepperException):
+    """Raised when there was a problem invoking the serverless function
+    """
+
     pass
 
 
 class Result:
+    """Task result object
+
+    Result wraps the information returned when the serverless function is invoked.
+
+    """
+
     def __init__(self, lambda_function_name, event):
         # type: (str, dict) -> None
+        """
+        Args:
+            lambda_function_name: The name of the invoked AWS Lambda function
+            event: The event dictionary to pass to the AWS Lambda function
+        """
         self._logger = logging.getLogger(__name__)
 
         self._lambda_function_name = lambda_function_name
@@ -39,6 +60,16 @@ class Result:
         self._invoke_response = None
 
     def start(self):
+        """Start executing the serverless function
+
+        Invokes the serverless function.
+
+        For AWS, this invokes the Lambda in a thread, since the only way to get results is to call syncronously.
+        By putting the invoke call in a therad, it will not block the main application thread.
+
+        Returns:
+            Thread: The thread running the lambda
+        """
         if self._thread is None:
 
             def lambda_run():
@@ -51,6 +82,20 @@ class Result:
         return self._thread
 
     def get(self):
+        """Get the response from the serverless execution.
+
+        This is a potentially blocking call.
+
+        It will retrieve the return payload from the serverless function.  If it is called before the serverless function has finished,
+        ``get`` will block until the serverless function returns.
+
+        Raises:
+            InvocationError: Raises if something goes retrieving the return payload of the serverless function.
+
+        Returns:
+            dict: The return payload of the serverless function
+        """
+
         if self._thread is None:
             self.start()
         self._thread.join()
@@ -67,12 +112,31 @@ class Result:
 
 
 class AppProvider(Enum):
+    """Enum to identify the serverless provider.
+
+    Currently unused.
+
+    """
+
     AWS = 1
 
 
 class ChiliPepper:
     def create_app(self, app_name, app_provider=AppProvider.AWS, config=None):
         # type: (str, AppProvider, Optional[Config]) -> App
+        """[summary]
+
+        Args:
+            app_name ([type]): [description]
+            app_provider ([type], optional): [description]. Defaults to AppProvider.AWS.
+            config ([type], optional): [description]. Defaults to None.
+
+        Raises:
+            ChiliPepperException: [description]
+
+        Returns:
+            [type]: [description]
+        """
         if config is None:
             config = Config()
         if app_provider == AppProvider.AWS:
@@ -82,19 +146,35 @@ class ChiliPepper:
 
 
 class TaskFunction:
+    """A wrapper around python functions that can be serverlessly deployed and executed by chili-pepper
+    """
+
     def __init__(self, func, environment_variables=None):
         # type: (builtins.function, Optional[Dict]) -> None
+        """
+        Args:
+            func (builtins.function): The python function object
+            environment_variables (dict, optional): Environment variables that will be passed to the serverles function. Defaults to None.
+        """
         self._func = func
         self._environment_variables = environment_variables if environment_variables is not None else dict()
 
     @property
     def func(self):
         # type: () -> builtins.function
+        """
+        Returns:
+            builtins.function: The python function
+        """
         return self._func
 
     @property
     def environment_variables(self):
         # type: () -> Dict
+        """
+        Returns:
+            dict: The environment variable overrides for this function
+        """
         return self._environment_variables
 
     def __eq__(self, other):
@@ -119,8 +199,19 @@ class TaskFunction:
 
 
 class App:
+    """Cloud-agnostic App class
+
+    App is the main class for applications that use Chili-Pepper.
+
+    """
+
     def __init__(self, app_name, config=None):
         # type: (str, Optional[Config]) -> None
+        """
+        Args:
+            app_name: The application name
+            config: Optional default config object
+        """
         if config is None:
             config = Config()
 
@@ -132,14 +223,27 @@ class App:
     @property
     def app_name(self):
         # type: () -> str
+        """
+        The application name.
+        """
         return self._app_name
 
     @property
     def task_functions(self):
         # type: () -> List[TaskFunction]
+        """
+        The task functions identified with the ``@app.task`` decorator
+        """
         return self._task_functions
 
-    def task(self):
+    def task(self, environment_variables=None):
+        # type: (Optional[Dict]) -> builtins.func
+        """
+        The decorator to denote tasks.  It must be implemented by cloud-specific App child classes.
+
+        Args:
+            environment_variables: Environment variables to apply to the task
+        """
         raise NotImplementedError()
 
 
@@ -147,11 +251,20 @@ class AwsApp(App):
     @property
     def bucket_name(self):
         # type: () -> str
+        """
+        The AWS S3 bucket name that holds the lambda deployment packages
+        """
         return self.conf["aws"]["bucket_name"]
 
     @property
     def runtime(self):
         # type: () -> str
+        """
+        The AWS lambda runtime identifier.
+
+        .. _AWS lambda runtime documentation:
+            https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html
+        """
         return self.conf["aws"]["runtime"]  # TODO should runtime be set by sys.version_info?
 
     def task(self, environment_variables=None):

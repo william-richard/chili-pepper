@@ -54,6 +54,22 @@ test:3.7:
     - pip install -r requirements_test.txt
     - pytest -vv tests --cov chili_pepper
 
+docs:
+  # for now, this is just for testing that doc generator works
+  image: python:3.7-stretch
+  stage: test
+  services: []
+  before_script:
+    - pip install --no-use-pep517 -e .
+    - pip install -r requirements_docs.txt
+  script:
+    - cd docs
+    - make html
+    - mv _build/html ../docs
+  artifacts:
+    paths:
+      - docs
+
 deploy_staging:
   stage: deploy
   only:
