@@ -5,6 +5,8 @@ except ImportError:
 
 
 class Config(MutableMapping):
+    """Chili-Pepper specific configuration
+    """
     def __init__(self):
         self._config = dict()
         self._config["aws"] = dict()

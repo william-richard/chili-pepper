@@ -21,6 +21,8 @@ from chili_pepper.deployer import Deployer
 
 
 class CLI:
+    """Implements the ``chili`` command line interface
+    """
     def __init__(self):
         # set up logging
         logger = logging.getLogger("chili_pepper")
@@ -52,6 +54,11 @@ class CLI:
 
     def deploy(self, args):
         # type: (argparse.Namespace) -> None
+        """Deploys a Chili-Pepper app
+
+        Args:
+            args (argparse.Namespace): Arguments passed to the command line.
+        """
 
         app = self._load_app(args.app, args.app_dir)
         deployer = Deployer(app)
@@ -60,6 +67,9 @@ class CLI:
 
 
 def main():
+    """
+    Main Chili-Pepper command line interface handler
+    """
     cli = CLI()
 
     parser = argparse.ArgumentParser(description="Serverless asynchronous tasks")
