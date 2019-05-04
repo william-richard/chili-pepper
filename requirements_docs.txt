@@ -1,3 +1,2 @@
-mkdocs>=1.0.4, <2.0.0
-mkdocs-material
-
+sphinx
+sphinx_materialdesign_theme
