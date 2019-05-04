@@ -11,6 +11,7 @@ Welcome to chili-pepper's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+
 **Asynchronous Serverless Task Execution**
 
 Chili-Pepper is a simple framework that makes it easy to execute
@@ -19,6 +20,38 @@ It handles serverless deployment and task execution.
 It allows you to run important functions in parallel with
 your main application without managing
 any additional infrastructure, like servers or queues.
+
+.. image:: https://gitlab.com/william-richard/chili-pepper/badges/master/pipeline.svg
+    :target: https://gitlab.com/william-richard/chili-pepper/commits/master
+    :alt: Pipeline Status
+
+.. image:: https://badge.fury.io/py/chili-pepper.svg
+    :target: https://badge.fury.io/py/chili-pepper
+
+.. image:: https://readthedocs.org/projects/chili-pepper/badge/?version=latest
+    :target: https://chili-pepper.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
+
+.. image:: https://gitlab.com/william-richard/chili-pepper/badges/master/coverage.svg
+    :target: https://gitlab.com/william-richard/chili-pepper/commits/master
+    :alt: Coverage report
+
+.. image:: https://img.shields.io/pypi/dm/chili-pepper.svg
+    :alt: PyPI - Downloads
+
+.. image:: https://img.shields.io/librariesio/dependent-repos/pypi/chili-pepper.svg
+    :alt: Dependent repos (via libraries.io)
+
+.. image:: https://img.shields.io/librariesio/release/pypi/chili-pepper.svg
+    :alt: Libraries.io dependency status for latest release
+
+.. image:: https://img.shields.io/pypi/l/chili-pepper.svg
+    :alt: PyPI - License
+
+.. image:: https://img.shields.io/pypi/pyversions/chili-pepper.svg
+    :alt: PyPI - Python Version
+
+
 
 Command
 =======
