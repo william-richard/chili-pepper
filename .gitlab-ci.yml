@@ -56,7 +56,6 @@ test:3.7:
 
 docs:
   # for now, this is just for testing that doc generator works
-  image: python:3.7-stretch
   stage: test
   services: []
   before_script:
@@ -65,10 +64,18 @@ docs:
   script:
     - cd docs
     - make html
-    - mv _build/html ../docs
+    - mv _build/html ../html_docs
   artifacts:
-    paths:
-      - docs
+      paths:
+        - html_docs
+
+test_build:
+  stage: test
+  services: []
+  script:
+    - pip install twine
+    - python setup.py sdist bdist_wheel
+    - twine check dist/*
 
 deploy_staging:
   stage: deploy
@@ -82,7 +89,6 @@ deploy_staging:
   script:
     - pip install twine
     - python setup.py sdist bdist_wheel
-    - env
     - twine check dist/*
     - twine upload --repository-url $TEST_PYPI_REPOSITORY_URL --verbose dist/*
 
@@ -96,6 +102,5 @@ deploy_prod:
   script:
     - pip install twine
     - python setup.py sdist bdist_wheel
-    - env
     - twine check dist/*
     - twine upload dist/*
