@@ -7,10 +7,13 @@
 chili-pepper
 ****************************************
 
+.. PYPI-BEGIN
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
+.. PYPI-END
 
 **Asynchronous Serverless Task Execution**
 
@@ -191,9 +194,13 @@ This will print ``Hello Jalapeno!``,
 after executing `my_task` in a serverless function.
 
 
+.. PYPI-BEGIN
+
 Indices and tables
 ==================
 
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+.. PYPI-END
