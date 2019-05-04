@@ -253,6 +253,9 @@ class AwsApp(App):
         # type: () -> str
         """
         The AWS S3 bucket name that holds the lambda deployment packages
+
+        Returns:
+            str: The bucket name
         """
         return self.conf["aws"]["bucket_name"]
 
@@ -264,8 +267,26 @@ class AwsApp(App):
 
         .. _AWS lambda runtime documentation:
             https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html
+
+        Returns:
+            str: The runtime identifier
         """
         return self.conf["aws"]["runtime"]  # TODO should runtime be set by sys.version_info?
+
+    @property
+    def kms_key_arn(self):
+        # type: () -> Optional[str]
+        """
+        The KMS key arn to use, or None to use the default AWS key
+
+        Returns:
+            Optional[str]: The KMS key arn, or None to use the default key
+        """
+        kms_key_config_key = "kms_key"
+        if kms_key_config_key in self.conf["aws"]:
+            return self.conf["aws"][kms_key_config_key]
+        else:
+            return None
 
     def task(self, environment_variables=None):
         # type: (Optional[Dict]) -> builtins.func
