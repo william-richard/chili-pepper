@@ -46,7 +46,7 @@ setuptools.setup(
     author="William Richard",
     author_email="william.richard.no.s@gmail.com",
     description="Serverless asynchronous task execution",
-    long_description_content_type="text/markdown",
+    long_description_content_type="text/x-rst",
     long_description=long_description,
     license="Apache 2.0",
     packages=setuptools.find_packages(),
@@ -54,7 +54,10 @@ setuptools.setup(
     install_requires=["awacs", "boto3", "pathlib2", "troposphere"],
     python_requires=">=2.6, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, <4",
     url="https://gitlab.com/william-richard/chili-pepper",
-    project_urls={"Source": "https://gitlab.com/william-richard/chili-pepper"},
+    project_urls={
+        "Source": "https://gitlab.com/william-richard/chili-pepper",
+        "Documentation ": "https://chili-pepper.readthedocs.io/en/stable/",
+    },
     keywords="cloud serverless task job queue distributed",
     classifiers=[
         "Development Status :: 1 - Planning",
