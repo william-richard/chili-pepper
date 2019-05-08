@@ -1,12 +1,13 @@
 import argparse
-import boto3
-import pytest
-import pprint
 import json
+import pprint
 from collections import OrderedDict
 
-from conftest import create_app_structure, create_chili_pepper_s3_bucket
+import boto3
+import pytest
+
 from chili_pepper.main import CLI
+from conftest import create_app_structure, create_chili_pepper_s3_bucket
 
 
 @pytest.mark.parametrize("runtime", ["python2.7", "python3.6", "python3.7"])
@@ -84,11 +85,11 @@ def test_deployed_cf_template(tmp_path, request, runtime, environment_variables,
 
     pprint.pprint(stack_template)
 
-    lambda_function_role = stack_resources["FunctionRole"]
-    assert lambda_function_role["Type"] == "AWS::IAM::Role"
-    lambda_function_role_properties = lambda_function_role["Properties"]
-    assert lambda_function_role_properties["ManagedPolicyArns"] == ["arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"]
-    assert lambda_function_role_properties["AssumeRolePolicyDocument"] == OrderedDict(
+    chili_pepper_function_role = stack_resources["FunctionRole"]
+    assert chili_pepper_function_role["Type"] == "AWS::IAM::Role"
+    chili_pepper_role_properties = chili_pepper_function_role["Properties"]
+    assert chili_pepper_role_properties["ManagedPolicyArns"] == ["arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"]
+    assert chili_pepper_role_properties["AssumeRolePolicyDocument"] == OrderedDict(
         [
             (
                 "Statement",

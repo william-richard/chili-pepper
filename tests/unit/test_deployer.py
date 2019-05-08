@@ -63,3 +63,5 @@ def test_get_cloudformation_template(runtime, environment_variables, kms_key):
         assert "KmsKeyArn" not in say_hello_task.to_dict()["Properties"]
     else:
         assert say_hello_task.KmsKeyArn == kms_key
+
+    assert len(template_resources) == 2
