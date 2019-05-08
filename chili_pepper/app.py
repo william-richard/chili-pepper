@@ -7,6 +7,7 @@ from enum import Enum
 from threading import Thread
 
 import boto3
+import awacs
 
 from chili_pepper.config import Config
 from chili_pepper.deployer import Deployer
@@ -32,6 +33,14 @@ class InvalidFunctionSignature(ChiliPepperException):
 
 class InvocationError(ChiliPepperException):
     """Raised when there was a problem invoking the serverless function
+    """
+
+    pass
+
+
+class MissingArgumentError(ChiliPepperException):
+    """
+    Raised when there is a missing or incorrect argument in a method
     """
 
     pass
@@ -245,6 +254,42 @@ class App:
             environment_variables: Environment variables to apply to the task
         """
         raise NotImplementedError()
+
+
+class AwsAllowPermission:
+    """
+    Simple wrapper around an AWS IAM rule allowing permission(s) to resource(s)
+    """
+
+    def __init__(self, allow_actions, allow_resources):
+        # type: (List[str], List[str])
+        """
+        [summary]
+
+        Args:
+            allow_permissions ([List[str]): A list of AWS permissions to allow
+            allow_resources (List[str]): A list of AWS resource arns to grant permmission to
+        """
+        if len(allow_actions) == 0:
+            raise MissingArgumentError("You must grant access to at least 1 action")
+        if len(allow_resources) == 0:
+            raise MissingArgumentError("You must grant access to at least 1 resource")
+
+        self._allow_actions = allow_actions
+        self._allow_resources = allow_resources
+
+    @property
+    def allow_actions(self):
+        return self._allow_actions
+
+    @property
+    def allow_resources(self):
+        return self._allow_resources
+
+    def statement(self):
+        return awacs.aws.Statement(
+            Effect=awacs.aws.Allow, Action=[awacs.aws.Action(*action.split(":")) for action in self.allow_actions], Resource=self.allow_resources
+        )
 
 
 class AwsApp(App):
