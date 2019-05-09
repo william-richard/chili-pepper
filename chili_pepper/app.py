@@ -357,9 +357,12 @@ class AwsApp(App):
         """
         allow_policy_permissions_key = "extra_allow_permissions"
         if allow_policy_permissions_key in self.conf["aws"] and self.conf["aws"][allow_policy_permissions_key]:
-            return self.conf["aws"][allow_policy_permissions_key]
+            allow_permissions = self.conf["aws"][allow_policy_permissions_key]
         else:
-            return list()
+            allow_permissions = list()
+        if self.kms_key_arn:
+            allow_permissions.append(AwsAllowPermission(["kms:Decrypt"], [self.kms_key_arn]))
+        return allow_permissions
 
     def task(self, environment_variables=None):
         # type: (Optional[Dict]) -> builtins.func
