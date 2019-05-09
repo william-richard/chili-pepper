@@ -73,7 +73,7 @@ class Result:
 
         Invokes the serverless function.
 
-        For AWS, this invokes the Lambda in a thread, since the only way to get results is to call syncronously.
+        For AWS, this invokes the Lambda in a thread, since the only way to get results is to call synchronously.
         By putting the invoke call in a therad, it will not block the main application thread.
 
         Returns:
@@ -333,9 +333,22 @@ class AwsApp(App):
         else:
             return None
 
+    @property
+    def allow_policy_permissions(self):
+        """
+        Extra permissions to allow functions in this app
+
+        Returns:
+            List[AwsAllowPermission]: The extra permissions that should be granted
+        """
+        allow_policy_permissions_key = "extra_allow_permissions"
+        if allow_policy_permissions_key in self.conf["aws"] and self.conf["aws"][allow_policy_permissions_key]:
+            return self.conf["aws"][allow_policy_permissions_key]
+        else:
+            return list()
+
     def task(self, environment_variables=None):
         # type: (Optional[Dict]) -> builtins.func
-
         if environment_variables is None:
             environment_variables = dict()
 
