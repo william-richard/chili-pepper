@@ -7,6 +7,7 @@ from enum import Enum
 from threading import Thread
 
 import boto3
+import awacs
 
 from chili_pepper.config import Config
 from chili_pepper.deployer import Deployer
@@ -32,6 +33,14 @@ class InvalidFunctionSignature(ChiliPepperException):
 
 class InvocationError(ChiliPepperException):
     """Raised when there was a problem invoking the serverless function
+    """
+
+    pass
+
+
+class MissingArgumentError(ChiliPepperException):
+    """
+    Raised when there is a missing or incorrect argument in a method
     """
 
     pass
@@ -64,7 +73,7 @@ class Result:
 
         Invokes the serverless function.
 
-        For AWS, this invokes the Lambda in a thread, since the only way to get results is to call syncronously.
+        For AWS, this invokes the Lambda in a thread, since the only way to get results is to call synchronously.
         By putting the invoke call in a therad, it will not block the main application thread.
 
         Returns:
@@ -247,6 +256,56 @@ class App:
         raise NotImplementedError()
 
 
+class AwsAllowPermission:
+    """
+    Simple wrapper around an AWS IAM rule allowing permission(s) to resource(s)
+    """
+
+    def __init__(self, allow_actions, allow_resources):
+        # type: (List[str], List[str])
+        """
+        [summary]
+
+        Args:
+            allow_permissions ([List[str]): A list of AWS permissions to allow
+            allow_resources (List[str]): A list of AWS resource arns to grant permmission to
+        """
+        if len(allow_actions) == 0:
+            raise MissingArgumentError("You must grant access to at least 1 action")
+        if len(allow_resources) == 0:
+            raise MissingArgumentError("You must grant access to at least 1 resource")
+
+        self._allow_actions = allow_actions
+        self._allow_resources = allow_resources
+
+    @property
+    def allow_actions(self):
+        """
+        Returns:
+            List[str]: Actions to grant permissions
+        """
+        return self._allow_actions
+
+    @property
+    def allow_resources(self):
+        """
+        Returns:
+            List[str]: The resources that should be granted permissions
+        """
+        return self._allow_resources
+
+    def statement(self):
+        """
+        Generate the statement object for these permissions
+
+        Returns:
+            awsacs.aws.Statement: The statement object granting permissions
+        """
+        return awacs.aws.Statement(
+            Effect=awacs.aws.Allow, Action=[awacs.aws.Action(*action.split(":")) for action in self.allow_actions], Resource=self.allow_resources
+        )
+
+
 class AwsApp(App):
     @property
     def bucket_name(self):
@@ -288,9 +347,22 @@ class AwsApp(App):
         else:
             return None
 
+    @property
+    def allow_policy_permissions(self):
+        """
+        Extra permissions to allow functions in this app
+
+        Returns:
+            List[AwsAllowPermission]: The extra permissions that should be granted
+        """
+        allow_policy_permissions_key = "extra_allow_permissions"
+        if allow_policy_permissions_key in self.conf["aws"] and self.conf["aws"][allow_policy_permissions_key]:
+            return self.conf["aws"][allow_policy_permissions_key]
+        else:
+            return list()
+
     def task(self, environment_variables=None):
         # type: (Optional[Dict]) -> builtins.func
-
         if environment_variables is None:
             environment_variables = dict()
 

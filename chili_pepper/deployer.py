@@ -8,8 +8,9 @@ import sys
 import tempfile
 import zipfile
 
+import awacs
 import boto3
-from awacs.aws import Allow, Policy, Principal, Statement
+from awacs.aws import Allow, Principal, Statement
 from awacs.sts import AssumeRole
 from troposphere import GetAtt, Template, awslambda, iam
 
@@ -84,7 +85,7 @@ class Deployer:
         """Builds a deployment package of the application
 
         Args:
-            dest (Path): The deployment package destianion
+            dest (Path): The deployment package destination
             app_dir (Path): The application source code location
 
         Returns:
@@ -197,11 +198,21 @@ class Deployer:
     def _create_role(self):
         # TODO set a role name here? Instead of relying on cloudformation to create a random nonsense string for the name
         # TODO allow customizable policies
-        return iam.Role(
-            "FunctionRole",
-            AssumeRolePolicyDocument=Policy(Statement=[Statement(Effect=Allow, Action=[AssumeRole], Principal=Principal("Service", ["lambda.amazonaws.com"]))]),
-            ManagedPolicyArns=["arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"],
-        )
+        role_kwargs = {
+            "AssumeRolePolicyDocument": awacs.aws.Policy(
+                Statement=[Statement(Effect=Allow, Action=[AssumeRole], Principal=Principal("Service", ["lambda.amazonaws.com"]))]
+            ),
+            "ManagedPolicyArns": ["arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"],
+        }
+        if len(self._app.allow_policy_permissions) > 0:
+            role_kwargs["Policies"] = [
+                iam.Policy(
+                    PolicyName="ExtraChiliPepperPermissions",
+                    PolicyDocument=awacs.aws.Policy(Statement=[p.statement() for p in self._app.allow_policy_permissions]),
+                )
+            ]
+
+        return iam.Role("FunctionRole", **role_kwargs)
 
     def _get_stack_name(self):
         # type: () -> str
