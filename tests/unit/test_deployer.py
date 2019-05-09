@@ -7,6 +7,11 @@ from troposphere import awslambda, iam
 from chili_pepper.app import AwsAllowPermission, ChiliPepper
 from chili_pepper.deployer import Deployer
 
+try:
+    from collections.abc import Iterable
+except ImportError:
+    from collections import Iterable
+
 
 @pytest.mark.parametrize("runtime", ["python2.7", "python3.6", "python3.7"])
 @pytest.mark.parametrize("environment_variables", [None, "fake_none", dict(), {"my_key": "my_value"}])
@@ -27,17 +32,20 @@ def test_get_cloudformation_template(runtime, environment_variables, kms_key, ex
     app.conf["aws"]["bucket_name"] = test_bucket_name
     app.conf["aws"]["runtime"] = runtime
 
-    kms_key_config_key = "kms_key"
-    if kms_key == "fake_none":
-        app.conf["aws"][kms_key_config_key] = None
-    elif kms_key:
-        app.conf["aws"][kms_key_config_key] = kms_key
-
     aws_permissions_config_key = "extra_allow_permissions"
     if extra_allow_permissions == "fake_none":
         app.conf["aws"][aws_permissions_config_key] = None
     elif extra_allow_permissions:
         app.conf["aws"][aws_permissions_config_key] = extra_allow_permissions
+
+    kms_key_config_key = "kms_key"
+    if kms_key == "fake_none":
+        app.conf["aws"][kms_key_config_key] = None
+    elif kms_key:
+        app.conf["aws"][kms_key_config_key] = kms_key
+        if not isinstance(extra_allow_permissions, Iterable) or isinstance(extra_allow_permissions, str):
+            extra_allow_permissions = list()
+        extra_allow_permissions.append(AwsAllowPermission(["kms:Decrypt"], [kms_key]))
 
     task_kwargs = dict()
     if environment_variables == "fake_none":
