@@ -16,6 +16,7 @@ except ImportError:
 @pytest.mark.parametrize("runtime", ["python2.7", "python3.6", "python3.7"])
 @pytest.mark.parametrize("environment_variables", [None, "fake_none", dict(), {"my_key": "my_value"}])
 @pytest.mark.parametrize("memory", [None, "fake_none", 128, 3008])
+@pytest.mark.parametrize("timeout", [None, "fake_none", 1, 900])
 @pytest.mark.parametrize("kms_key", [None, "fake_none", "", "my_kms_key"])
 @pytest.mark.parametrize(
     "extra_allow_permissions",
@@ -27,7 +28,7 @@ except ImportError:
         [AwsAllowPermission(["s3:Put*", "s3:Get*"], ["my_bucket", "my_other_bucket"]), AwsAllowPermission(["ec2:*"], ["*"])],
     ],
 )
-def test_get_cloudformation_template(runtime, environment_variables, memory, kms_key, extra_allow_permissions):
+def test_get_cloudformation_template(runtime, environment_variables, memory, timeout, kms_key, extra_allow_permissions):
     app = ChiliPepper().create_app(app_name="test_get_cloudformation_template")
     test_bucket_name = "my_test_bucket"
     app.conf["aws"]["bucket_name"] = test_bucket_name
@@ -58,6 +59,11 @@ def test_get_cloudformation_template(runtime, environment_variables, memory, kms
         task_kwargs["memory"] = None
     elif memory:
         task_kwargs["memory"] = memory
+
+    if timeout == "fake_none":
+        task_kwargs["timeout"] = None
+    elif timeout:
+        task_kwargs["timeout"] = timeout
 
     @app.task(**task_kwargs)
     def say_hello(event, context):
@@ -103,6 +109,11 @@ def test_get_cloudformation_template(runtime, environment_variables, memory, kms
         assert "MemorySize" not in say_hello_task.to_dict()["Properties"]
     else:
         assert say_hello_task.MemorySize == memory
+
+    if timeout == "fake_none" or timeout is None:
+        assert "Timeout" not in say_hello_task.to_dict()["Properties"]
+    else:
+        assert say_hello_task.Timeout == timeout
 
     if kms_key == "fake_none" or kms_key is None or len(kms_key) == 0:
         assert "KmsKeyArn" not in say_hello_task.to_dict()["Properties"]
