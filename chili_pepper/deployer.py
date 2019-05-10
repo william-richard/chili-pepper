@@ -189,8 +189,8 @@ class Deployer:
         }
         if self._app.kms_key_arn is not None:
             function_kwargs["KmsKeyArn"] = self._app.kms_key_arn
-
-        print(function_kwargs)
+        if task_function.memory is not None:
+            function_kwargs["MemorySize"] = task_function.memory
 
         # TODO specify the function name?  Maybe we don't care?
         return awslambda.Function(title, **function_kwargs)
