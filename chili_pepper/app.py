@@ -158,7 +158,7 @@ class TaskFunction:
     """A wrapper around python functions that can be serverlessly deployed and executed by chili-pepper
     """
 
-    def __init__(self, func, environment_variables=None):
+    def __init__(self, func, environment_variables=None, memory=None):
         # type: (builtins.function, Optional[Dict]) -> None
         """
         Args:
@@ -167,6 +167,7 @@ class TaskFunction:
         """
         self._func = func
         self._environment_variables = environment_variables if environment_variables is not None else dict()
+        self._memory = memory
 
     @property
     def func(self):
@@ -185,6 +186,15 @@ class TaskFunction:
             dict: The environment variable overrides for this function
         """
         return self._environment_variables
+
+    @property
+    def memory(self):
+        # type: () -> Optional[int]
+        """
+        Returns:
+            Optional[int]: The memory allocation to grant to this serverless function
+        """
+        return self._memory
 
     def __eq__(self, other):
         # type: (TaskFunction) -> bool
@@ -364,7 +374,7 @@ class AwsApp(App):
             allow_permissions.append(AwsAllowPermission(["kms:Decrypt"], [self.kms_key_arn]))
         return allow_permissions
 
-    def task(self, environment_variables=None):
+    def task(self, environment_variables=None, memory=None):
         # type: (Optional[Dict]) -> builtins.func
         if environment_variables is None:
             environment_variables = dict()
@@ -395,7 +405,7 @@ class AwsApp(App):
             task_environment_variables = deepcopy(self.conf["default_environment_variables"])
             task_environment_variables.update(environment_variables)
 
-            self._task_functions.append(TaskFunction(func, environment_variables=task_environment_variables))
+            self._task_functions.append(TaskFunction(func, environment_variables=task_environment_variables, memory=memory))
 
             def _delay_wrapper(event):
                 # see https://docs.aws.amazon.com/lambda/latest/dg/python-programming-model-handler-types.html
