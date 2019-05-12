@@ -1,9 +1,9 @@
+import pytest
 import importlib
 import os
 import sys
 
 import boto3
-import pytest
 from moto import mock_cloudformation, mock_iam, mock_lambda, mock_s3, mock_kms
 
 
