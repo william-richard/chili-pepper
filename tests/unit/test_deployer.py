@@ -1,4 +1,3 @@
-import pprint
 from copy import deepcopy
 
 import awacs
@@ -71,8 +70,6 @@ def test_get_cloudformation_template_runtime(runtime):
     assert function_resource.Runtime == runtime
 
 
-
-
 @pytest.mark.parametrize("environment_variables", [None, "fake_none", dict(), {"my_key": "my_value"}])
 def test_get_cloudformation_template_environment_variables(environment_variables):
     task_kwargs = dict()
@@ -105,6 +102,7 @@ def test_get_cloudformation_template_memory(memory):
     else:
         assert function_resource.MemorySize == memory
 
+
 @pytest.mark.parametrize("timeout", [None, "fake_none", 1, 900])
 def test_get_cloudformation_template_timeout(timeout):
     task_kwargs = dict()
@@ -120,7 +118,6 @@ def test_get_cloudformation_template_timeout(timeout):
         assert "Timeout" not in function_resource.to_dict()["Properties"]
     else:
         assert function_resource.Timeout == timeout
-
 
 
 @pytest.mark.parametrize("kms_key", [None, "fake_none", "", "my_kms_key"])
@@ -141,6 +138,7 @@ def test_get_cloudformation_template_kms_key(kms_key):
     else:
         assert function_resource.KmsKeyArn == kms_key
 
+
 @pytest.mark.parametrize("kms_key", [None, "fake_none", "", "my_kms_key"])
 @pytest.mark.parametrize(
     "extra_allow_permissions",
@@ -150,7 +148,7 @@ def test_get_cloudformation_template_kms_key(kms_key):
         list(),
         [AwsAllowPermission(["*"], ["*"])],
         [AwsAllowPermission(["s3:Put*", "s3:Get*"], ["my_bucket", "my_other_bucket"]), AwsAllowPermission(["ec2:*"], ["*"])],
-    ]
+    ],
 )
 def test_get_cloudformation_template_permissions(kms_key, extra_allow_permissions):
     config = Config()
@@ -186,6 +184,19 @@ def test_get_cloudformation_template_permissions(kms_key, extra_allow_permission
         )
 
 
+@pytest.mark.parametrize("function_tags", [None, "fake_none", dict(), {"tag_key": "tag_value"}])
+def test_get_cloudformation_template_function_tags(function_tags):
+    task_kwargs = dict()
+    if function_tags == "fake_none":
+        task_kwargs["tags"] = None
+    elif function_tags:
+        task_kwargs["tags"] = function_tags
 
+    cloudformation_template = _get_cloudformation_template_with_test_setup(config=Config(), task_kwargs=task_kwargs)
+    function_resource = cloudformation_template.resources["TestsUnitTestDeployerSayHello"]
 
-    assert len(template_resources) == 2
+    if function_tags == "fake_none" or function_tags is None:
+        expected_tags = list()
+    else:
+        expected_tags = [{"Key": k, "Value": v} for k, v in function_tags.items()]
+    assert function_resource.Tags.to_dict() == expected_tags
