@@ -287,14 +287,14 @@ class AwsAllowPermission:
     Simple wrapper around an AWS IAM rule allowing permission(s) to resource(s)
     """
 
-    def __init__(self, allow_actions, allow_resources):
-        # type: (List[str], List[str])
+    def __init__(self, allow_actions, allow_resources, sid=None):
+        # type: (List[str], List[str], Optional[str])
         """
-        [summary]
-
         Args:
             allow_permissions ([List[str]): A list of AWS permissions to allow
             allow_resources (List[str]): A list of AWS resource arns to grant permmission to
+            sid (Optional[str]): The Sid of the iam statement
+                                 https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_sid.html
         """
         if len(allow_actions) == 0:
             raise MissingArgumentError("You must grant access to at least 1 action")
@@ -303,6 +303,7 @@ class AwsAllowPermission:
 
         self._allow_actions = allow_actions
         self._allow_resources = allow_resources
+        self._sid = sid
 
     @property
     def allow_actions(self):
@@ -320,6 +321,14 @@ class AwsAllowPermission:
         """
         return self._allow_resources
 
+    @property
+    def sid(self):
+        """
+        Returns:
+            Optional[str]: The sid of this policy statement
+        """
+        return self._sid
+
     def statement(self):
         """
         Generate the statement object for these permissions
@@ -327,9 +336,15 @@ class AwsAllowPermission:
         Returns:
             awsacs.aws.Statement: The statement object granting permissions
         """
-        return awacs.aws.Statement(
-            Effect=awacs.aws.Allow, Action=[awacs.aws.Action(*action.split(":")) for action in self.allow_actions], Resource=self.allow_resources
-        )
+        statement_kwargs = {
+            "Effect": awacs.aws.Allow,
+            "Action": [awacs.aws.Action(*action.split(":")) for action in self.allow_actions],
+            "Resource": self.allow_resources,
+        }
+        if self.sid is not None:
+            statement_kwargs["Sid"] = self.sid
+
+        return awacs.aws.Statement(**statement_kwargs)
 
 
 class AwsApp(App):
@@ -387,7 +402,9 @@ class AwsApp(App):
         else:
             allow_permissions = list()
         if self.kms_key_arn:
-            allow_permissions.append(AwsAllowPermission(["kms:Decrypt"], [self.kms_key_arn]))
+            chili_pepper_kms_key_permission_sid = "ChiliPepperGrantAccessToKmsKey"
+            if chili_pepper_kms_key_permission_sid not in [p.sid for p in allow_permissions]:
+                allow_permissions.append(AwsAllowPermission(["kms:Decrypt"], [self.kms_key_arn], sid=chili_pepper_kms_key_permission_sid))
         return allow_permissions
 
     def task(self, environment_variables=None, memory=None, timeout=None):
