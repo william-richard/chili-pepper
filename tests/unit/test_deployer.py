@@ -1,10 +1,12 @@
 import pprint
+from copy import deepcopy
 
 import awacs
 import pytest
 from troposphere import awslambda, iam
 
 from chili_pepper.app import AwsAllowPermission, ChiliPepper
+from chili_pepper.config import Config
 from chili_pepper.deployer import Deployer
 
 try:
@@ -13,57 +15,20 @@ except ImportError:
     from collections import Iterable
 
 
-@pytest.mark.parametrize("runtime", ["python2.7", "python3.6", "python3.7"])
-@pytest.mark.parametrize("environment_variables", [None, "fake_none", dict(), {"my_key": "my_value"}])
-@pytest.mark.parametrize("memory", [None, "fake_none", 128, 3008])
-@pytest.mark.parametrize("timeout", [None, "fake_none", 1, 900])
-@pytest.mark.parametrize("kms_key", [None, "fake_none", "", "my_kms_key"])
-@pytest.mark.parametrize(
-    "extra_allow_permissions",
-    [
-        None,
-        "fake_none",
-        list(),
-        [AwsAllowPermission(["*"], ["*"])],
-        [AwsAllowPermission(["s3:Put*", "s3:Get*"], ["my_bucket", "my_other_bucket"]), AwsAllowPermission(["ec2:*"], ["*"])],
-    ],
-)
-def test_get_cloudformation_template(runtime, environment_variables, memory, timeout, kms_key, extra_allow_permissions):
-    app = ChiliPepper().create_app(app_name="test_get_cloudformation_template")
+def _get_cloudformation_template_with_test_setup(config, task_kwargs):
+    """
+    A helper function for all of the tests that use the deployer cloudformation template
+
+    Args:
+        config (Config): The config object to use with the Chili-Pepper App
+        task_kwargs (Dict[str, Object]): Kwargs to pass to app.tasks
+    """
+
+    app = ChiliPepper().create_app(app_name="test_get_cloudformation_template", config=config)
     test_bucket_name = "my_test_bucket"
     app.conf["aws"]["bucket_name"] = test_bucket_name
-    app.conf["aws"]["runtime"] = runtime
-
-    aws_permissions_config_key = "extra_allow_permissions"
-    if extra_allow_permissions == "fake_none":
-        app.conf["aws"][aws_permissions_config_key] = None
-    elif extra_allow_permissions:
-        app.conf["aws"][aws_permissions_config_key] = extra_allow_permissions
-
-    kms_key_config_key = "kms_key"
-    if kms_key == "fake_none":
-        app.conf["aws"][kms_key_config_key] = None
-    elif kms_key:
-        app.conf["aws"][kms_key_config_key] = kms_key
-        if not isinstance(extra_allow_permissions, Iterable) or isinstance(extra_allow_permissions, str):
-            extra_allow_permissions = list()
-        extra_allow_permissions.append(AwsAllowPermission(["kms:Decrypt"], [kms_key]))
-
-    task_kwargs = dict()
-    if environment_variables == "fake_none":
-        task_kwargs["environment_variables"] = None
-    elif environment_variables:
-        task_kwargs["environment_variables"] = environment_variables
-
-    if memory == "fake_none":
-        task_kwargs["memory"] = None
-    elif memory:
-        task_kwargs["memory"] = memory
-
-    if timeout == "fake_none":
-        task_kwargs["timeout"] = None
-    elif timeout:
-        task_kwargs["timeout"] = timeout
+    if "runtime" not in app.conf["aws"]:
+        app.conf["aws"]["runtime"] = "python3.7"
 
     @app.task(**task_kwargs)
     def say_hello(event, context):
@@ -75,7 +40,6 @@ def test_get_cloudformation_template(runtime, environment_variables, memory, tim
     cloudformation_template = deployer._get_cloudformation_template(code_argument)
 
     template_resources = cloudformation_template.resources
-    pprint.pprint(template_resources)
 
     function_role = template_resources["FunctionRole"]
     assert type(function_role) == iam.Role
@@ -85,6 +49,131 @@ def test_get_cloudformation_template(runtime, environment_variables, memory, tim
             awacs.aws.Statement(Effect=awacs.aws.Allow, Action=[awacs.sts.AssumeRole], Principal=awacs.aws.Principal("Service", ["lambda.amazonaws.com"]))
         ]
     )
+
+    say_hello_task = template_resources["TestsUnitTestDeployerSayHello"]
+    assert type(say_hello_task) == awslambda.Function
+    assert say_hello_task.Code == code_argument
+    assert say_hello_task.Handler == "tests.unit.test_deployer.say_hello"
+
+    assert len(template_resources) == 2
+
+    return cloudformation_template
+
+
+@pytest.mark.parametrize("runtime", ["python2.7", "python3.6", "python3.7"])
+def test_get_cloudformation_template_runtime(runtime):
+    config = Config()
+    config["aws"]["runtime"] = runtime
+
+    cloudformation_template = _get_cloudformation_template_with_test_setup(config=config, task_kwargs=dict())
+
+    function_resource = cloudformation_template.resources["TestsUnitTestDeployerSayHello"]
+    assert function_resource.Runtime == runtime
+
+
+
+
+@pytest.mark.parametrize("environment_variables", [None, "fake_none", dict(), {"my_key": "my_value"}])
+def test_get_cloudformation_template_environment_variables(environment_variables):
+    task_kwargs = dict()
+    if environment_variables == "fake_none":
+        task_kwargs["environment_variables"] = None
+    elif environment_variables:
+        task_kwargs["environment_variables"] = environment_variables
+
+    cloudformation_template = _get_cloudformation_template_with_test_setup(config=Config(), task_kwargs=task_kwargs)
+
+    function_resource = cloudformation_template.resources["TestsUnitTestDeployerSayHello"]
+    if environment_variables == "fake_none" or environment_variables is None:
+        assert function_resource.Environment.to_dict() == {"Variables": dict()}
+    else:
+        assert function_resource.Environment.to_dict() == {"Variables": environment_variables}
+
+
+@pytest.mark.parametrize("memory", [None, "fake_none", 128, 3008])
+def test_get_cloudformation_template_memory(memory):
+    task_kwargs = dict()
+    if memory == "fake_none":
+        task_kwargs["memory"] = None
+    elif memory:
+        task_kwargs["memory"] = memory
+
+    cloudformation_template = _get_cloudformation_template_with_test_setup(config=Config(), task_kwargs=task_kwargs)
+    function_resource = cloudformation_template.resources["TestsUnitTestDeployerSayHello"]
+    if memory == "fake_none" or memory is None:
+        assert "MemorySize" not in function_resource.to_dict()["Properties"]
+    else:
+        assert function_resource.MemorySize == memory
+
+@pytest.mark.parametrize("timeout", [None, "fake_none", 1, 900])
+def test_get_cloudformation_template_timeout(timeout):
+    task_kwargs = dict()
+    if timeout == "fake_none":
+        task_kwargs["timeout"] = None
+    elif timeout:
+        task_kwargs["timeout"] = timeout
+
+    cloudformation_template = _get_cloudformation_template_with_test_setup(config=Config(), task_kwargs=task_kwargs)
+    function_resource = cloudformation_template.resources["TestsUnitTestDeployerSayHello"]
+
+    if timeout == "fake_none" or timeout is None:
+        assert "Timeout" not in function_resource.to_dict()["Properties"]
+    else:
+        assert function_resource.Timeout == timeout
+
+
+
+@pytest.mark.parametrize("kms_key", [None, "fake_none", "", "my_kms_key"])
+def test_get_cloudformation_template_kms_key(kms_key):
+    config = Config()
+    kms_key_config_key = "kms_key"
+    if kms_key == "fake_none":
+        config["aws"][kms_key_config_key] = None
+    elif kms_key:
+        config["aws"][kms_key_config_key] = kms_key
+
+    cloudformation_template = _get_cloudformation_template_with_test_setup(config=config, task_kwargs=dict())
+
+    function_resource = cloudformation_template.resources["TestsUnitTestDeployerSayHello"]
+
+    if kms_key == "fake_none" or kms_key is None or len(kms_key) == 0:
+        assert "KmsKeyArn" not in function_resource.to_dict()["Properties"]
+    else:
+        assert function_resource.KmsKeyArn == kms_key
+
+@pytest.mark.parametrize("kms_key", [None, "fake_none", "", "my_kms_key"])
+@pytest.mark.parametrize(
+    "extra_allow_permissions",
+    [
+        None,
+        "fake_none",
+        list(),
+        [AwsAllowPermission(["*"], ["*"])],
+        [AwsAllowPermission(["s3:Put*", "s3:Get*"], ["my_bucket", "my_other_bucket"]), AwsAllowPermission(["ec2:*"], ["*"])],
+    ]
+)
+def test_get_cloudformation_template_permissions(kms_key, extra_allow_permissions):
+    config = Config()
+
+    aws_permissions_config_key = "extra_allow_permissions"
+    if extra_allow_permissions == "fake_none":
+        config["aws"][aws_permissions_config_key] = None
+    elif extra_allow_permissions:
+        config["aws"][aws_permissions_config_key] = deepcopy(extra_allow_permissions)
+
+    kms_key_config_key = "kms_key"
+    if kms_key == "fake_none":
+        config["aws"][kms_key_config_key] = None
+    elif kms_key:
+        config["aws"][kms_key_config_key] = kms_key
+        if not isinstance(extra_allow_permissions, Iterable) or isinstance(extra_allow_permissions, str):
+            extra_allow_permissions = list()
+        extra_allow_permissions.append(AwsAllowPermission(["kms:Decrypt"], [kms_key], sid="ChiliPepperGrantAccessToKmsKey"))
+
+    cloudformation_template = _get_cloudformation_template_with_test_setup(config=config, task_kwargs=dict())
+
+    function_role = cloudformation_template.resources["FunctionRole"]
+
     if extra_allow_permissions == "fake_none" or extra_allow_permissions is None or len(extra_allow_permissions) == 0:
         assert "Policies" not in function_role.to_dict()["Properties"]
     else:
@@ -96,28 +185,7 @@ def test_get_cloudformation_template(runtime, environment_variables, memory, tim
             ).to_dict()
         )
 
-    say_hello_task = template_resources["TestsUnitTestDeployerSayHello"]
-    assert type(say_hello_task) == awslambda.Function
-    assert say_hello_task.Code == code_argument
-    assert say_hello_task.Runtime == runtime
-    assert say_hello_task.Handler == "tests.unit.test_deployer.say_hello"
-    if environment_variables == "fake_none" or environment_variables is None:
-        assert say_hello_task.Environment.to_dict() == {"Variables": dict()}
-    else:
-        assert say_hello_task.Environment.to_dict() == {"Variables": environment_variables}
-    if memory == "fake_none" or memory is None:
-        assert "MemorySize" not in say_hello_task.to_dict()["Properties"]
-    else:
-        assert say_hello_task.MemorySize == memory
 
-    if timeout == "fake_none" or timeout is None:
-        assert "Timeout" not in say_hello_task.to_dict()["Properties"]
-    else:
-        assert say_hello_task.Timeout == timeout
 
-    if kms_key == "fake_none" or kms_key is None or len(kms_key) == 0:
-        assert "KmsKeyArn" not in say_hello_task.to_dict()["Properties"]
-    else:
-        assert say_hello_task.KmsKeyArn == kms_key
 
     assert len(template_resources) == 2
