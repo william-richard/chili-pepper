@@ -7,14 +7,6 @@
 chili-pepper
 ****************************************
 
-.. PYPI-BEGIN
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
-.. PYPI-END
-
 **Asynchronous Serverless Task Execution**
 
 Chili-Pepper is a simple framework that makes it easy to execute
@@ -202,5 +194,13 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Contents:
+
+   Module Reference <modules>
+   license
+
 
 .. PYPI-END
