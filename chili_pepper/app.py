@@ -402,6 +402,17 @@ class AwsApp(App):
             return None
 
     @property
+    def default_tags(self):
+        """
+        Returns:
+            Dict: The default tags to assign to all resources created when deploying this App
+        """
+        if "default_tags" in self.conf["aws"] and self.conf["aws"]["default_tags"] is not None:
+            return self.conf["aws"]["default_tags"]
+        else:
+            return dict()
+
+    @property
     def allow_policy_permissions(self):
         """
         Extra permissions to allow functions in this app
@@ -449,12 +460,16 @@ class AwsApp(App):
                     + str(function_parameter_list)
                 )
 
-            # combine the default and default env vars
+            # combine the default and passed env vars
             default_environment_vars = self.conf["default_environment_variables"]
             task_environment_variables = deepcopy(default_environment_vars if default_environment_vars is not None else dict())
             task_environment_variables.update(environment_variables)
 
-            self._task_functions.append(TaskFunction(func, environment_variables=task_environment_variables, memory=memory, timeout=timeout, tags=tags))
+            # combine the default and passed tags
+            task_tags = deepcopy(self.default_tags)
+            task_tags.update(tags)
+
+            self._task_functions.append(TaskFunction(func, environment_variables=task_environment_variables, memory=memory, timeout=timeout, tags=task_tags))
 
             def _delay_wrapper(event):
                 # see https://docs.aws.amazon.com/lambda/latest/dg/python-programming-model-handler-types.html

@@ -197,20 +197,32 @@ def test_get_cloudformation_template_permissions(kms_key, extra_allow_permission
             ).to_dict()
         )
 
-
-@pytest.mark.parametrize("function_tags", [None, "fake_none", dict(), {"tag_key": "tag_value"}])
-def test_get_cloudformation_template_function_tags(function_tags):
+@pytest.mark.parametrize("default_tags", [None, "fake_none", dict(), {"default_key": "default_value"}, {"default_key": "default_value", "override_key": "initial_value"}])
+@pytest.mark.parametrize("function_tags", [None, "fake_none", dict(), {"tag_key": "tag_value"}, {"function_key": "function_value", "override_key": "new_value"}])
+def test_get_cloudformation_template_function_tags(default_tags, function_tags):
     task_kwargs = dict()
     if function_tags == "fake_none":
         task_kwargs["tags"] = None
     elif function_tags:
         task_kwargs["tags"] = function_tags
 
-    cloudformation_template = _get_cloudformation_template_with_test_setup(config=Config(), task_kwargs=task_kwargs)
+    config = Config()
+    if default_tags == "fake_none":
+        config["aws"]["default_tags"] = None
+    elif default_tags:
+        config["aws"]["default_tags"] = default_tags
+
+    cloudformation_template = _get_cloudformation_template_with_test_setup(config=config, task_kwargs=task_kwargs)
     function_resource = cloudformation_template.resources["TestsUnitTestDeployerSayHello"]
 
-    if function_tags == "fake_none" or function_tags is None:
+    expected_tags_dict = dict()
+    if default_tags not in ["fake_none", None]:
+        expected_tags_dict.update(default_tags)
+    if function_tags not in ["fake_none", None]:
+        expected_tags_dict.update(function_tags)
+
+    if function_tags in ["fake_none", None] and default_tags in ["fake_none", None]:
         expected_tags = list()
     else:
-        expected_tags = [{"Key": k, "Value": v} for k, v in function_tags.items()]
-    assert function_resource.Tags.to_dict() == expected_tags
+        expected_tags = [{"Key": k, "Value": v} for k, v in expected_tags_dict.items()]
+    assert sorted(function_resource.Tags.to_dict(), key=lambda d: d['Key']) == sorted(expected_tags, key=lambda d: d['Key'])
