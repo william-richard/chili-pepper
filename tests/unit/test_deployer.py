@@ -70,7 +70,10 @@ def test_get_cloudformation_template_runtime(runtime):
     assert function_resource.Runtime == runtime
 
 
-@pytest.mark.parametrize("default_environment_variables", [None, "fake_none", dict(), {'default_key': 'default_value'}, {'default_key': 'default_value', 'override_key': 'initial_value'}])
+@pytest.mark.parametrize(
+    "default_environment_variables",
+    [None, "fake_none", dict(), {"default_key": "default_value"}, {"default_key": "default_value", "override_key": "initial_value"}],
+)
 @pytest.mark.parametrize("environment_variables", [None, "fake_none", dict(), {"my_key": "my_value"}, {"override_key": "new_value", "my_key": "my_value"}])
 def test_get_cloudformation_template_environment_variables(default_environment_variables, environment_variables):
     task_kwargs = dict()
