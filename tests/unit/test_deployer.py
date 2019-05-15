@@ -70,21 +70,35 @@ def test_get_cloudformation_template_runtime(runtime):
     assert function_resource.Runtime == runtime
 
 
-@pytest.mark.parametrize("environment_variables", [None, "fake_none", dict(), {"my_key": "my_value"}])
-def test_get_cloudformation_template_environment_variables(environment_variables):
+@pytest.mark.parametrize("default_environment_variables", [None, "fake_none", dict(), {'default_key': 'default_value'}, {'default_key': 'default_value', 'override_key': 'initial_value'}])
+@pytest.mark.parametrize("environment_variables", [None, "fake_none", dict(), {"my_key": "my_value"}, {"override_key": "new_value", "my_key": "my_value"}])
+def test_get_cloudformation_template_environment_variables(default_environment_variables, environment_variables):
     task_kwargs = dict()
     if environment_variables == "fake_none":
         task_kwargs["environment_variables"] = None
     elif environment_variables:
         task_kwargs["environment_variables"] = environment_variables
 
-    cloudformation_template = _get_cloudformation_template_with_test_setup(config=Config(), task_kwargs=task_kwargs)
+    config = Config()
+    if default_environment_variables == "fake_none":
+        config["default_environment_variables"] = None
+    elif default_environment_variables:
+        config["default_environment_variables"] = default_environment_variables
+
+    cloudformation_template = _get_cloudformation_template_with_test_setup(config=config, task_kwargs=task_kwargs)
+
+    expected_environment_variables = dict()
+    if default_environment_variables not in [None, "fake_none"]:
+        expected_environment_variables.update(default_environment_variables)
+
+    if environment_variables not in [None, "fake_none"]:
+        expected_environment_variables.update(environment_variables)
 
     function_resource = cloudformation_template.resources["TestsUnitTestDeployerSayHello"]
-    if environment_variables == "fake_none" or environment_variables is None:
+    if environment_variables in ["fake_none", None] and default_environment_variables in ["fake_none", None]:
         assert function_resource.Environment.to_dict() == {"Variables": dict()}
     else:
-        assert function_resource.Environment.to_dict() == {"Variables": environment_variables}
+        assert function_resource.Environment.to_dict() == {"Variables": expected_environment_variables}
 
 
 @pytest.mark.parametrize("memory", [None, "fake_none", 128, 3008])

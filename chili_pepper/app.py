@@ -450,7 +450,8 @@ class AwsApp(App):
                 )
 
             # combine the default and default env vars
-            task_environment_variables = deepcopy(self.conf["default_environment_variables"])
+            default_environment_vars = self.conf["default_environment_variables"]
+            task_environment_variables = deepcopy(default_environment_vars if default_environment_vars is not None else dict())
             task_environment_variables.update(environment_variables)
 
             self._task_functions.append(TaskFunction(func, environment_variables=task_environment_variables, memory=memory, timeout=timeout, tags=tags))
