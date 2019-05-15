@@ -200,8 +200,13 @@ def test_get_cloudformation_template_permissions(kms_key, extra_allow_permission
             ).to_dict()
         )
 
-@pytest.mark.parametrize("default_tags", [None, "fake_none", dict(), {"default_key": "default_value"}, {"default_key": "default_value", "override_key": "initial_value"}])
-@pytest.mark.parametrize("function_tags", [None, "fake_none", dict(), {"tag_key": "tag_value"}, {"function_key": "function_value", "override_key": "new_value"}])
+
+@pytest.mark.parametrize(
+    "default_tags", [None, "fake_none", dict(), {"default_key": "default_value"}, {"default_key": "default_value", "override_key": "initial_value"}]
+)
+@pytest.mark.parametrize(
+    "function_tags", [None, "fake_none", dict(), {"tag_key": "tag_value"}, {"function_key": "function_value", "override_key": "new_value"}]
+)
 def test_get_cloudformation_template_function_tags(default_tags, function_tags):
     task_kwargs = dict()
     if function_tags == "fake_none":
@@ -228,4 +233,4 @@ def test_get_cloudformation_template_function_tags(default_tags, function_tags):
         expected_tags = list()
     else:
         expected_tags = [{"Key": k, "Value": v} for k, v in expected_tags_dict.items()]
-    assert sorted(function_resource.Tags.to_dict(), key=lambda d: d['Key']) == sorted(expected_tags, key=lambda d: d['Key'])
+    assert sorted(function_resource.Tags.to_dict(), key=lambda d: d["Key"]) == sorted(expected_tags, key=lambda d: d["Key"])
