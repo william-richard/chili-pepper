@@ -10,6 +10,7 @@ import zipfile
 
 import awacs
 import boto3
+import troposphere
 from awacs.aws import Allow, Principal, Statement
 from awacs.sts import AssumeRole
 from troposphere import GetAtt, Template, awslambda, iam
@@ -186,6 +187,7 @@ class Deployer:
             "Role": GetAtt(role, "Arn"),
             "Runtime": runtime,
             "Environment": awslambda.Environment(Variables=task_function.environment_variables),
+            "Tags": troposphere.Tags(task_function.tags),
         }
         if self._app.kms_key_arn is not None:
             function_kwargs["KmsKeyArn"] = self._app.kms_key_arn

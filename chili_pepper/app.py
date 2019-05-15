@@ -158,19 +158,21 @@ class TaskFunction:
     """A wrapper around python functions that can be serverlessly deployed and executed by chili-pepper
     """
 
-    def __init__(self, func, environment_variables=None, memory=None, timeout=None):
-        # type: (builtins.function, Optional[Dict], Optional[int], Optional[int]) -> None
+    def __init__(self, func, environment_variables=None, memory=None, timeout=None, tags=None):
+        # type: (builtins.function, Optional[Dict], Optional[int], Optional[int], Optional[dict]) -> None
         """
         Args:
             func (builtins.function): The python function object
             environment_variables (dict, optional): Environment variables that will be passed to the serverles function. Defaults to None.
             memory [int, optional]: Memory value to allocate for the serverless function
             timeout [int, optional]: Timeout value for the serverless function
+            tags [dict, optional]: Tags to add to the serverless function
         """
         self._func = func
         self._environment_variables = environment_variables if environment_variables is not None else dict()
         self._memory = memory
         self._timeout = timeout
+        self._tags = tags if tags is not None else dict()
 
     @property
     def func(self):
@@ -211,6 +213,17 @@ class TaskFunction:
             Optional[int]: Timeout value for the serverless function
         """
         return self._timeout
+
+    @property
+    def tags(self):
+        # type() -> Dict
+        """
+        https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-lambda-function.html#cfn-lambda-function-tags
+
+        Returns:
+            Dict: Tags for the serverless function
+        """
+        return self._tags
 
     def __eq__(self, other):
         # type: (TaskFunction) -> bool
@@ -287,14 +300,14 @@ class AwsAllowPermission:
     Simple wrapper around an AWS IAM rule allowing permission(s) to resource(s)
     """
 
-    def __init__(self, allow_actions, allow_resources):
-        # type: (List[str], List[str])
+    def __init__(self, allow_actions, allow_resources, sid=None):
+        # type: (List[str], List[str], Optional[str])
         """
-        [summary]
-
         Args:
             allow_permissions ([List[str]): A list of AWS permissions to allow
             allow_resources (List[str]): A list of AWS resource arns to grant permmission to
+            sid (Optional[str]): The Sid of the iam statement
+                                 https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_sid.html
         """
         if len(allow_actions) == 0:
             raise MissingArgumentError("You must grant access to at least 1 action")
@@ -303,6 +316,7 @@ class AwsAllowPermission:
 
         self._allow_actions = allow_actions
         self._allow_resources = allow_resources
+        self._sid = sid
 
     @property
     def allow_actions(self):
@@ -320,6 +334,14 @@ class AwsAllowPermission:
         """
         return self._allow_resources
 
+    @property
+    def sid(self):
+        """
+        Returns:
+            Optional[str]: The sid of this policy statement
+        """
+        return self._sid
+
     def statement(self):
         """
         Generate the statement object for these permissions
@@ -327,9 +349,15 @@ class AwsAllowPermission:
         Returns:
             awsacs.aws.Statement: The statement object granting permissions
         """
-        return awacs.aws.Statement(
-            Effect=awacs.aws.Allow, Action=[awacs.aws.Action(*action.split(":")) for action in self.allow_actions], Resource=self.allow_resources
-        )
+        statement_kwargs = {
+            "Effect": awacs.aws.Allow,
+            "Action": [awacs.aws.Action(*action.split(":")) for action in self.allow_actions],
+            "Resource": self.allow_resources,
+        }
+        if self.sid is not None:
+            statement_kwargs["Sid"] = self.sid
+
+        return awacs.aws.Statement(**statement_kwargs)
 
 
 class AwsApp(App):
@@ -374,6 +402,17 @@ class AwsApp(App):
             return None
 
     @property
+    def default_tags(self):
+        """
+        Returns:
+            Dict: The default tags to assign to all resources created when deploying this App
+        """
+        if "default_tags" in self.conf["aws"] and self.conf["aws"]["default_tags"] is not None:
+            return self.conf["aws"]["default_tags"]
+        else:
+            return dict()
+
+    @property
     def allow_policy_permissions(self):
         """
         Extra permissions to allow functions in this app
@@ -387,13 +426,17 @@ class AwsApp(App):
         else:
             allow_permissions = list()
         if self.kms_key_arn:
-            allow_permissions.append(AwsAllowPermission(["kms:Decrypt"], [self.kms_key_arn]))
+            chili_pepper_kms_key_permission_sid = "ChiliPepperGrantAccessToKmsKey"
+            if chili_pepper_kms_key_permission_sid not in [p.sid for p in allow_permissions]:
+                allow_permissions.append(AwsAllowPermission(["kms:Decrypt"], [self.kms_key_arn], sid=chili_pepper_kms_key_permission_sid))
         return allow_permissions
 
-    def task(self, environment_variables=None, memory=None, timeout=None):
-        # type: (Optional[Dict], Optional[int], Optional[int]) -> builtins.func
+    def task(self, environment_variables=None, memory=None, timeout=None, tags=None):
+        # type: (Optional[Dict], Optional[int], Optional[int], Optional[dict]) -> builtins.func
         if environment_variables is None:
             environment_variables = dict()
+        if tags is None:
+            tags = dict()
 
         def _decorator(func,):
             # Ensure that the function signature matches what lambda expects
@@ -417,11 +460,16 @@ class AwsApp(App):
                     + str(function_parameter_list)
                 )
 
-            # combine the default and default env vars
-            task_environment_variables = deepcopy(self.conf["default_environment_variables"])
+            # combine the default and passed env vars
+            default_environment_vars = self.conf["default_environment_variables"]
+            task_environment_variables = deepcopy(default_environment_vars if default_environment_vars is not None else dict())
             task_environment_variables.update(environment_variables)
 
-            self._task_functions.append(TaskFunction(func, environment_variables=task_environment_variables, memory=memory, timeout=timeout))
+            # combine the default and passed tags
+            task_tags = deepcopy(self.default_tags)
+            task_tags.update(tags)
+
+            self._task_functions.append(TaskFunction(func, environment_variables=task_environment_variables, memory=memory, timeout=timeout, tags=task_tags))
 
             def _delay_wrapper(event):
                 # see https://docs.aws.amazon.com/lambda/latest/dg/python-programming-model-handler-types.html
