@@ -120,7 +120,8 @@ we'll be calling it ``app`` in these examples.
 AWS Configuration
 ^^^^^^^^^^^^^^^^^
 
-You need to pass some AWS specific configs to the app.
+You need to pass these required AWS specific configs to the app.
+For a full list of AWS configuration options, see :ref:`aws-configuration`.
 
 Bucket
 """"""
@@ -199,7 +200,8 @@ Indices and tables
    :maxdepth: 1
    :caption: Contents:
 
-   Module Reference <modules>
+   config
+   API Docs <modules>
    license
 
 
