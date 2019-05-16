@@ -31,12 +31,6 @@ any additional infrastructure, like servers or queues.
     :target: https://gitlab.com/william-richard/chili-pepper/commits/master
     :alt: Coverage report
 
-.. image:: https://img.shields.io/pypi/dm/chili-pepper.svg
-    :alt: PyPI - Downloads
-
-.. image:: https://img.shields.io/librariesio/dependent-repos/pypi/chili-pepper.svg
-    :alt: Dependent repos (via libraries.io)
-
 .. image:: https://img.shields.io/librariesio/release/pypi/chili-pepper.svg
     :alt: Libraries.io dependency status for latest release
 
