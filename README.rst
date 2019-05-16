@@ -7,14 +7,6 @@
 chili-pepper
 ****************************************
 
-.. PYPI-BEGIN
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
-.. PYPI-END
-
 **Asynchronous Serverless Task Execution**
 
 Chili-Pepper is a simple framework that makes it easy to execute
@@ -38,12 +30,6 @@ any additional infrastructure, like servers or queues.
 .. image:: https://gitlab.com/william-richard/chili-pepper/badges/master/coverage.svg
     :target: https://gitlab.com/william-richard/chili-pepper/commits/master
     :alt: Coverage report
-
-.. image:: https://img.shields.io/pypi/dm/chili-pepper.svg
-    :alt: PyPI - Downloads
-
-.. image:: https://img.shields.io/librariesio/dependent-repos/pypi/chili-pepper.svg
-    :alt: Dependent repos (via libraries.io)
 
 .. image:: https://img.shields.io/librariesio/release/pypi/chili-pepper.svg
     :alt: Libraries.io dependency status for latest release
@@ -92,7 +78,7 @@ Next, you need to configure your serverless provider credentials.
 Amazon Web Services (AWS)
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-You can provide AWS credentials in many ways, including environment variables, your aws credentials file, or a server role.  See [the boto3 documentation about credential configuration](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html#configuring-credentials) for details.
+You can provide AWS credentials in many ways, including environment variables, your aws credentials file, or a server role.  See `the boto3 documentation about credential configuration <https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html#configuring-credentials>`_ for details.
 
 These credentials need to be allowed to create, execute and delete
 AWS Lambda functions and IAM roles.
@@ -128,7 +114,8 @@ we'll be calling it ``app`` in these examples.
 AWS Configuration
 ^^^^^^^^^^^^^^^^^
 
-You need to pass some AWS specific configs to the app.
+You need to pass these required AWS specific configs to the app.
+For a full list of AWS configuration options, see `Aws Configuration <https://chili-pepper.readthedocs.io/en/stable/config.html#aws-configuration>`_.
 
 Bucket
 """"""
@@ -147,7 +134,7 @@ Runtime
 
     app.conf["aws"]["runtime"] = "python3.7"
 
-AWS Lambda supports several python runtimes.  See [the lambda runtime documentation](https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html) for a full list.  You must pass the "Identifier" for the runtime of your choice to the Chili-Pepper app config.
+AWS Lambda supports several python runtimes.  See `the lambda runtime documentation <https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html>`_ for a full list.  You must pass the "Identifier" for the runtime of your choice to the Chili-Pepper app config.
 
 Creating a Task
 ---------------
@@ -202,5 +189,14 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Contents:
+
+   config
+   API Docs <modules>
+   license
+
 
 .. PYPI-END

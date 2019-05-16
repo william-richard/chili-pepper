@@ -1,5 +1,5 @@
-chili_pepper
-============
+API Reference
+=============
 
 .. toctree::
    :maxdepth: 4
