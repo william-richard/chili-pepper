@@ -121,7 +121,7 @@ AWS Configuration
 ^^^^^^^^^^^^^^^^^
 
 You need to pass these required AWS specific configs to the app.
-For a full list of AWS configuration options, see :ref:`aws-configuration`.
+For a full list of AWS configuration options, see `Aws Configuration <https://chili-pepper.readthedocs.io/en/stable/config.html#aws-configuration>`_.
 
 Bucket
 """"""
