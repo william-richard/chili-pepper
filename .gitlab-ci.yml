@@ -28,7 +28,7 @@ test:2.7:
     - pip install --no-use-pep517 -e  .
   script:
     - pip install -r requirements_test.txt
-    - pytest -vv tests --cov chili_pepper
+    - pytest -vv --numprocesses=auto --cov --cov-config=.coveragerc --cov-report=term-missing tests
 
 test:3.6:
   image: python:3.6-stretch
@@ -40,7 +40,7 @@ test:3.6:
     - pip install --no-use-pep517 -e  .
   script:
     - pip install -r requirements_test.txt
-    - pytest -vv tests --cov chili_pepper
+    - pytest -vv --numprocesses=auto --cov --cov-config=.coveragerc --cov-report=term-missing tests
 
 test:3.7:
   image: python:3.7-stretch
@@ -52,7 +52,7 @@ test:3.7:
     - pip install --no-use-pep517 -e  .
   script:
     - pip install -r requirements_test.txt
-    - pytest -vv tests --cov chili_pepper
+    - pytest -vv --numprocesses=auto --cov --cov-config=.coveragerc --cov-report=term-missing tests
 
 docs:
   # for now, this is just for testing that doc generator works
