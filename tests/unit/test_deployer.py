@@ -234,3 +234,36 @@ def test_get_cloudformation_template_function_tags(default_tags, function_tags):
     else:
         expected_tags = [{"Key": k, "Value": v} for k, v in expected_tags_dict.items()]
     assert sorted(function_resource.Tags.to_dict(), key=lambda d: d["Key"]) == sorted(expected_tags, key=lambda d: d["Key"])
+
+
+@pytest.mark.parametrize("security_group_ids", [None, "fake_none", [], ["sg-01"], ["sg-10", "sg-11", "sg-12"]])
+@pytest.mark.parametrize("subnet_ids", [None, "fake_none", [], ["subnet-01"], ["subnet-11", "subnet-12", "subnet-13"]])
+def test_get_cloudformation_template_vpc_config(security_group_ids, subnet_ids):
+    config = Config()
+    if security_group_ids == "fake_none":
+        config["aws"]["security_group_ids"] = None
+    elif security_group_ids:
+        config["aws"]["security_group_ids"] = security_group_ids
+
+    if subnet_ids == "fake_none":
+        config["aws"]["subnet_ids"] = None
+    elif subnet_ids:
+        config["aws"]["subnet_ids"] = subnet_ids
+
+    cloudformation_template = _get_cloudformation_template_with_test_setup(config=config, task_kwargs=dict())
+    function_resource = cloudformation_template.resources["TestsUnitTestDeployerSayHello"]
+
+    if security_group_ids in [None, "fake_none", []] and subnet_ids in [None, "fake_none", []]:
+        assert "VpcConfig" not in function_resource.to_dict()["Properties"]
+    else:
+        expected_vpc_config = awslambda.VPCConfig()
+        if security_group_ids in [None, "fake_none"]:
+            expected_vpc_config.SecurityGroupIds = list()
+        else:
+            expected_vpc_config.SecurityGroupIds = security_group_ids
+        if subnet_ids in [None, "fake_none"]:
+            expected_vpc_config.SubnetIds = list()
+        else:
+            expected_vpc_config.SubnetIds = subnet_ids
+
+        assert function_resource.VpcConfig.to_dict() == expected_vpc_config.to_dict()

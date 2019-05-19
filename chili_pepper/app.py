@@ -431,6 +431,36 @@ class AwsApp(App):
                 allow_permissions.append(AwsAllowPermission(["kms:Decrypt"], [self.kms_key_arn], sid=chili_pepper_kms_key_permission_sid))
         return allow_permissions
 
+    @property
+    def subnet_ids(self):
+        """
+        Subnet IDs for the lambda function
+
+        https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-lambda-function-vpcconfig.html
+
+        Returns:
+            List[str]: The subnet IDs for the lambda function
+        """
+        if "subnet_ids" in self.conf["aws"] and self.conf["aws"]["subnet_ids"] is not None:
+            return self.conf["aws"]["subnet_ids"]
+        else:
+            return list()
+
+    @property
+    def security_group_ids(self):
+        """
+        Security Group IDs for the lambda function
+
+        https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-lambda-function-vpcconfig.html
+
+        Returns:
+            List[str]: The security group IDs for the lambda function
+        """
+        if "security_group_ids" in self.conf["aws"] and self.conf["aws"]["security_group_ids"] is not None:
+            return self.conf["aws"]["security_group_ids"]
+        else:
+            return list()
+
     def task(self, environment_variables=None, memory=None, timeout=None, tags=None):
         # type: (Optional[Dict], Optional[int], Optional[int], Optional[dict]) -> builtins.func
         if environment_variables is None:
