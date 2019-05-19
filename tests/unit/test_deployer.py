@@ -257,7 +257,7 @@ def test_get_cloudformation_template_vpc_config(security_group_ids, subnet_ids):
         assert "VpcConfig" not in function_resource.to_dict()["Properties"]
     else:
         expected_vpc_config = awslambda.VPCConfig()
-        if security_group_ids in [None,"fake_none"]:
+        if security_group_ids in [None, "fake_none"]:
             expected_vpc_config.SecurityGroupIds = list()
         else:
             expected_vpc_config.SecurityGroupIds = security_group_ids
