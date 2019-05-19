@@ -82,3 +82,23 @@ A list of :py:class:`chili_pepper.app.AwsAllowPermission` objects,
 defining extra permissions to grant to the lambda functions.
 
 ``chili_pepper`` always grants access to `arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole <https://docs.aws.amazon.com/lambda/latest/dg/lambda-intro-execution-role.html>`_.
+
+
+``subnet_ids``
+""""""""""""""
+
+Default: :const:`list`.
+
+If passed, the lambda function should live in the passed subnets.
+
+See https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-lambda-function-vpcconfig.html.
+
+
+``security_group_ids``
+""""""""""""""""""""""
+
+Default: :const:`list`.
+
+If passed, the lambda function should live in these security groups.
+
+See https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-lambda-function-vpcconfig.html
