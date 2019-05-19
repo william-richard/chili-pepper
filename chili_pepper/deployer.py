@@ -191,6 +191,9 @@ class Deployer:
         }
         if self._app.kms_key_arn is not None:
             function_kwargs["KmsKeyArn"] = self._app.kms_key_arn
+        if len(self._app.subnet_ids) > 0 or len(self._app.security_group_ids) > 0:
+            function_kwargs["VpcConfig"] = awslambda.VPCConfig(SubnetIds=self._app.subnet_ids,SecurityGroupIds=self._app.security_group_ids)
+
         if task_function.memory is not None:
             function_kwargs["MemorySize"] = task_function.memory
         if task_function.timeout is not None:
