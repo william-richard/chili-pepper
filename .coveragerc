@@ -1,0 +1,14 @@
+[paths]
+source =
+    ../chili_pepper
+    */site-packages/chili_pepper
+
+[run]
+branch = true
+parallel = true
+source =
+    chili_pepper
+
+[report]
+show_missing = true
+precision = 2
