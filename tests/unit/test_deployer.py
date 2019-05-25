@@ -267,3 +267,23 @@ def test_get_cloudformation_template_vpc_config(security_group_ids, subnet_ids):
             expected_vpc_config.SubnetIds = subnet_ids
 
         assert function_resource.VpcConfig.to_dict() == expected_vpc_config.to_dict()
+
+
+@pytest.mark.parametrize("tracing_value", [None, "fake_none", True, False, 0, 1, "", "Active"])
+def test_get_cloudformation_template_tracing(tracing_value):
+    task_kwargs = dict()
+    if tracing_value == "fake_none":
+        task_kwargs["activate_tracing"] = None
+    elif tracing_value is not None:
+        task_kwargs["activate_tracing"] = tracing_value
+
+    cloudformation_template = _get_cloudformation_template_with_test_setup(config=Config(), task_kwargs=task_kwargs)
+    function_resource = cloudformation_template.resources["TestsUnitTestDeployerSayHello"]
+
+    # ONLY accept True.  Any other value should result in False
+
+    if tracing_value is True:
+        expected_tracing_config = awslambda.TracingConfig(Mode="Active")
+        assert function_resource.TracingConfig.to_dict() == expected_tracing_config.to_dict()
+    else:
+        assert "TracingConfig" not in function_resource.to_dict()["Properties"]
