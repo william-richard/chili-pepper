@@ -79,13 +79,13 @@ def test_get_cloudformation_template_environment_variables(default_environment_v
     task_kwargs = dict()
     if environment_variables == "fake_none":
         task_kwargs["environment_variables"] = None
-    elif environment_variables:
+    elif environment_variables is not None:
         task_kwargs["environment_variables"] = environment_variables
 
     config = Config()
     if default_environment_variables == "fake_none":
         config["default_environment_variables"] = None
-    elif default_environment_variables:
+    elif default_environment_variables is not None:
         config["default_environment_variables"] = default_environment_variables
 
     cloudformation_template = _get_cloudformation_template_with_test_setup(config=config, task_kwargs=task_kwargs)
@@ -109,7 +109,7 @@ def test_get_cloudformation_template_memory(memory):
     task_kwargs = dict()
     if memory == "fake_none":
         task_kwargs["memory"] = None
-    elif memory:
+    elif memory is not None:
         task_kwargs["memory"] = memory
 
     cloudformation_template = _get_cloudformation_template_with_test_setup(config=Config(), task_kwargs=task_kwargs)
@@ -125,7 +125,7 @@ def test_get_cloudformation_template_timeout(timeout):
     task_kwargs = dict()
     if timeout == "fake_none":
         task_kwargs["timeout"] = None
-    elif timeout:
+    elif timeout is not None:
         task_kwargs["timeout"] = timeout
 
     cloudformation_template = _get_cloudformation_template_with_test_setup(config=Config(), task_kwargs=task_kwargs)
@@ -143,7 +143,7 @@ def test_get_cloudformation_template_kms_key(kms_key):
     kms_key_config_key = "kms_key"
     if kms_key == "fake_none":
         config["aws"][kms_key_config_key] = None
-    elif kms_key:
+    elif kms_key is not None:
         config["aws"][kms_key_config_key] = kms_key
 
     cloudformation_template = _get_cloudformation_template_with_test_setup(config=config, task_kwargs=dict())
@@ -173,17 +173,18 @@ def test_get_cloudformation_template_permissions(kms_key, extra_allow_permission
     aws_permissions_config_key = "extra_allow_permissions"
     if extra_allow_permissions == "fake_none":
         config["aws"][aws_permissions_config_key] = None
-    elif extra_allow_permissions:
+    elif extra_allow_permissions is not None:
         config["aws"][aws_permissions_config_key] = deepcopy(extra_allow_permissions)
 
     kms_key_config_key = "kms_key"
     if kms_key == "fake_none":
         config["aws"][kms_key_config_key] = None
-    elif kms_key:
+    elif kms_key is not None:
         config["aws"][kms_key_config_key] = kms_key
         if not isinstance(extra_allow_permissions, Iterable) or isinstance(extra_allow_permissions, str):
             extra_allow_permissions = list()
-        extra_allow_permissions.append(AwsAllowPermission(["kms:Decrypt"], [kms_key], sid="ChiliPepperGrantAccessToKmsKey"))
+        if len(kms_key) > 0:
+            extra_allow_permissions.append(AwsAllowPermission(["kms:Decrypt"], [kms_key], sid="ChiliPepperGrantAccessToKmsKey"))
 
     cloudformation_template = _get_cloudformation_template_with_test_setup(config=config, task_kwargs=dict())
 
@@ -211,13 +212,13 @@ def test_get_cloudformation_template_function_tags(default_tags, function_tags):
     task_kwargs = dict()
     if function_tags == "fake_none":
         task_kwargs["tags"] = None
-    elif function_tags:
+    elif function_tags is not None:
         task_kwargs["tags"] = function_tags
 
     config = Config()
     if default_tags == "fake_none":
         config["aws"]["default_tags"] = None
-    elif default_tags:
+    elif default_tags is not None:
         config["aws"]["default_tags"] = default_tags
 
     cloudformation_template = _get_cloudformation_template_with_test_setup(config=config, task_kwargs=task_kwargs)
@@ -242,12 +243,12 @@ def test_get_cloudformation_template_vpc_config(security_group_ids, subnet_ids):
     config = Config()
     if security_group_ids == "fake_none":
         config["aws"]["security_group_ids"] = None
-    elif security_group_ids:
+    elif security_group_ids is not None:
         config["aws"]["security_group_ids"] = security_group_ids
 
     if subnet_ids == "fake_none":
         config["aws"]["subnet_ids"] = None
-    elif subnet_ids:
+    elif subnet_ids is not None:
         config["aws"]["subnet_ids"] = subnet_ids
 
     cloudformation_template = _get_cloudformation_template_with_test_setup(config=config, task_kwargs=dict())
