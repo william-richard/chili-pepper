@@ -189,7 +189,7 @@ class Deployer:
             "Environment": awslambda.Environment(Variables=task_function.environment_variables),
             "Tags": troposphere.Tags(task_function.tags),
         }
-        if self._app.kms_key_arn is not None:
+        if self._app.kms_key_arn is not None and len(self._app.kms_key_arn) > 0:
             function_kwargs["KmsKeyArn"] = self._app.kms_key_arn
         if len(self._app.subnet_ids) > 0 or len(self._app.security_group_ids) > 0:
             function_kwargs["VpcConfig"] = awslambda.VPCConfig(SubnetIds=self._app.subnet_ids, SecurityGroupIds=self._app.security_group_ids)
