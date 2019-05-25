@@ -199,6 +199,9 @@ class Deployer:
         if task_function.timeout is not None:
             function_kwargs["Timeout"] = task_function.timeout
 
+        if task_function.activate_tracing:
+            function_kwargs["TracingConfig"] = awslambda.TracingConfig(Mode="Active")
+
         # TODO specify the function name?  Maybe we don't care?
         return awslambda.Function(title, **function_kwargs)
 

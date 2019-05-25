@@ -158,8 +158,8 @@ class TaskFunction:
     """A wrapper around python functions that can be serverlessly deployed and executed by chili-pepper
     """
 
-    def __init__(self, func, environment_variables=None, memory=None, timeout=None, tags=None):
-        # type: (builtins.function, Optional[Dict], Optional[int], Optional[int], Optional[dict]) -> None
+    def __init__(self, func, environment_variables=None, memory=None, timeout=None, tags=None, activate_tracing=False):
+        # type: (builtins.function, Optional[Dict], Optional[int], Optional[int], Optional[dict], bool) -> None
         """
         Args:
             func (builtins.function): The python function object
@@ -173,6 +173,7 @@ class TaskFunction:
         self._memory = memory
         self._timeout = timeout
         self._tags = tags if tags is not None else dict()
+        self._activate_tracing = activate_tracing
 
     @property
     def func(self):
@@ -224,6 +225,22 @@ class TaskFunction:
             Dict: Tags for the serverless function
         """
         return self._tags
+
+    @property
+    def activate_tracing(self):
+        # type() -> bool
+        """
+        https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-lambda-function.html#cfn-lambda-function-tracingconfig
+
+        This will return ``True`` if and only if ``True`` was passed to the constructor - any other value, even if it is Truthy, will not activate tracing
+
+        Returns:
+            bool: ``True`` if tracing should be activate, ``False`` otherwise
+        """
+        if self._activate_tracing is True:
+            return True
+        else:
+            return False
 
     def __eq__(self, other):
         # type: (TaskFunction) -> bool
@@ -461,8 +478,8 @@ class AwsApp(App):
         else:
             return list()
 
-    def task(self, environment_variables=None, memory=None, timeout=None, tags=None):
-        # type: (Optional[Dict], Optional[int], Optional[int], Optional[dict]) -> builtins.func
+    def task(self, environment_variables=None, memory=None, timeout=None, tags=None, activate_tracing=False):
+        # type: (Optional[Dict], Optional[int], Optional[int], Optional[dict], bool) -> builtins.func
         if environment_variables is None:
             environment_variables = dict()
         if tags is None:
@@ -499,7 +516,11 @@ class AwsApp(App):
             task_tags = deepcopy(self.default_tags)
             task_tags.update(tags)
 
-            self._task_functions.append(TaskFunction(func, environment_variables=task_environment_variables, memory=memory, timeout=timeout, tags=task_tags))
+            self._task_functions.append(
+                TaskFunction(
+                    func, environment_variables=task_environment_variables, memory=memory, timeout=timeout, tags=task_tags, activate_tracing=activate_tracing
+                )
+            )
 
             def _delay_wrapper(event):
                 # see https://docs.aws.amazon.com/lambda/latest/dg/python-programming-model-handler-types.html
