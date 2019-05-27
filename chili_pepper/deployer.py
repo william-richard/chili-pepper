@@ -176,7 +176,6 @@ class Deployer:
 
     def _create_lambda_function(self, code_property, task_function, role, runtime):
         # type: (awslambda.Code, TaskFunction, iam.Role, str) -> None
-        # TODO customizable memory and other attributes
         # TODO add support for versioning
         function_handler = self._get_function_handler_string(task_function.func)
         title = self._get_function_logical_id(function_handler)
@@ -207,7 +206,6 @@ class Deployer:
 
     def _create_role(self):
         # TODO set a role name here? Instead of relying on cloudformation to create a random nonsense string for the name
-        # TODO allow customizable policies
         role_kwargs = {
             "AssumeRolePolicyDocument": awacs.aws.Policy(
                 Statement=[Statement(Effect=Allow, Action=[AssumeRole], Principal=Principal("Service", ["lambda.amazonaws.com"]))]
@@ -230,7 +228,6 @@ class Deployer:
         return self._app.app_name
 
     def _deploy_template_to_cloudformation(self, cf_template):
-        # TODO this is a bad stack name
         cf_stack_name = self._get_stack_name()
 
         self._logger.info("Deploying cloudformation template to stack " + cf_stack_name)
