@@ -2,12 +2,13 @@ import builtins
 import inspect
 import json
 import logging
+from base64 import b64decode
 from copy import deepcopy
 from enum import Enum
 from threading import Thread
 
-import boto3
 import awacs
+import boto3
 
 from chili_pepper.config import Config
 from chili_pepper.deployer import Deployer
@@ -83,12 +84,20 @@ class Result:
 
             def lambda_run():
                 lambda_client = boto3.client("lambda")
-                self._invoke_response = lambda_client.invoke(FunctionName=self._lambda_function_name, Payload=json.dumps(self._event))
+                self._invoke_response = lambda_client.invoke(FunctionName=self._lambda_function_name, Payload=json.dumps(self._event), LogType="Tail")
                 return
 
             self._thread = Thread(target=lambda_run)
             self._thread.start()
         return self._thread
+
+    def _join_invocation(self):
+        """
+        Ensure the lambda thread has been executed, and joined with the main thread
+        """
+        if self._thread is None:
+            self.start()
+        self._thread.join()
 
     def get(self):
         """Get the response from the serverless execution.
@@ -104,13 +113,10 @@ class Result:
         Returns:
             dict: The return payload of the serverless function
         """
-
-        if self._thread is None:
-            self.start()
-        self._thread.join()
+        self._join_invocation()
 
         # lambda has now been invoked and _invoke_response *should* be populated
-        # TODO error handling, logs from the lambda, etc
+        # TODO error handling
         # moto returns None for payload in python 3.6
         if self._invoke_response["Payload"] is not None:
             payload = self._invoke_response["Payload"].read().decode("utf8")
@@ -118,6 +124,26 @@ class Result:
             raise InvocationError("No invoke response, even though the AWS lambda function has been invoked.")
         self._logger.info("Got payload {payload} from thread {thread}".format(payload=payload, thread=self._thread))
         return json.loads(payload)
+
+    def get_log_result(self):
+        """
+        Get the log result from the serverless invocation.
+
+        This is potentially a blocking call.
+
+        Returns:
+            str: The last 4 KB of the execution log
+        """
+        self._join_invocation()
+
+        if self._invoke_response["LogResult"] is not None:
+            log_result = b64decode(self._invoke_response["LogResult"]).decode("utf8")
+            self._logger.debug("Log result was populated")
+        else:
+            log_result = ""
+            self._logger.debug("Log result was NOT populated")
+
+        return log_result
 
 
 class AppProvider(Enum):
