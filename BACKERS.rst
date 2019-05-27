@@ -2,7 +2,9 @@
 Sponsors and Backers
 ====================
 
-Chili-Pepper is an independent, open source project.  Ongoing development is made possible thanks to these awesome backers.
+Chili-Pepper is an independent, open source project.
+Ongoing development is made possible thanks to
+these awesome backers listed below.
 
 If Chili-Pepper has earned your support, please consider becoming a backer `on Patreon <https://www.patreon.com/chili_pepper>`_.
 
