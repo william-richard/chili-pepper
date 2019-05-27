@@ -13,12 +13,9 @@ Chili-Pepper is a simple framework that makes it easy to execute
 tasks without interrupting the main flow of your application.
 It handles serverless deployment and task execution.
 It allows you to run important functions in parallel with
-your main application without managing
-any additional infrastructure, like servers or queues.
+your main application with
+**zero downtime, zero maintenance and infinite scaling**.
 
-.. image:: https://gitlab.com/william-richard/chili-pepper/badges/master/pipeline.svg
-    :target: https://gitlab.com/william-richard/chili-pepper/commits/master
-    :alt: Pipeline Status
 
 .. image:: https://badge.fury.io/py/chili-pepper.svg
     :target: https://badge.fury.io/py/chili-pepper
@@ -27,6 +24,18 @@ any additional infrastructure, like servers or queues.
     :target: https://chili-pepper.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
+.. image:: https://img.shields.io/pypi/l/chili-pepper.svg
+    :alt: PyPI - License
+
+.. image:: https://img.shields.io/pypi/pyversions/chili-pepper.svg
+    :alt: PyPI - Python Version
+
+|
+
+.. image:: https://gitlab.com/william-richard/chili-pepper/badges/master/pipeline.svg
+    :target: https://gitlab.com/william-richard/chili-pepper/commits/master
+    :alt: Pipeline Status
+
 .. image:: https://gitlab.com/william-richard/chili-pepper/badges/master/coverage.svg
     :target: https://gitlab.com/william-richard/chili-pepper/commits/master
     :alt: Coverage report
@@ -34,13 +43,12 @@ any additional infrastructure, like servers or queues.
 .. image:: https://img.shields.io/librariesio/release/pypi/chili-pepper.svg
     :alt: Libraries.io dependency status for latest release
 
-.. image:: https://img.shields.io/pypi/l/chili-pepper.svg
-    :alt: PyPI - License
+|
 
-.. image:: https://img.shields.io/pypi/pyversions/chili-pepper.svg
-    :alt: PyPI - Python Version
-
-
+.. image:: https://c5.patreon.com/external/logo/become_a_patron_button.png
+    :alt: Become a Supporter of Chili-Pepper
+    :target: https://www.patreon.com/chili_pepper
+    :height: 30px
 
 Command
 =======
@@ -180,6 +188,18 @@ you can call them asynchronously.
 This will print ``Hello Jalapeno!``,
 after executing `my_task` in a serverless function.
 
+Support
+=======
+
+Chili-Pepper is built by a 1 person team supported by
+`these awesome backers, supporters and sponsors <https://gitlab.com/william-richard/chili-pepper/blob/master/BACKERS.rst>`_.
+If you use Chili-Pepper, I would love to hear from you!
+And, if I have earned your support, please consider backing me `on Patreon <https://www.patreon.com/chili_pepper>`_.
+
+.. image:: https://c5.patreon.com/external/logo/become_a_patron_button.png
+    :alt: Become a Supporter of Chili-Pepper
+    :target: https://www.patreon.com/chili_pepper
+    :height: 40px
 
 .. PYPI-BEGIN
 
@@ -196,6 +216,7 @@ Indices and tables
 
    config
    API Docs <modules>
+   backers
    license
 
 
